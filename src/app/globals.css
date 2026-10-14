@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* Tokens del design system Genie (claro / oscuro). */
+:root {
+  --surface: #fafbf7;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eff3ed;
+  --border: #dce3dc;
+  --border-strong: #7d8e84;
+  --ink: #13201a;
+  --ink-muted: #516158;
+  --brand: #0b7a43;
+  --brand-strong: #075c32;
+  --on-brand: #ffffff;
+  --brand-soft: #e3f5ea;
+  --brand-soft-ink: #075c32;
+  --gold: #e0a82e;
+  --on-gold: #2b1e00;
+  --info: #1d5fa8;
+  --warning: #8a5a00;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --focus: #1d5fa8;
+  --shadow-card: 0 1px 2px rgba(19, 32, 26, 0.06), 0 4px 12px rgba(19, 32, 26, 0.06);
+  --shadow-pop: 0 8px 28px rgba(19, 32, 26, 0.16);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #0e1511;
+    --surface-raised: #162019;
+    --surface-sunken: #0a100d;
+    --border: #2a372f;
+    --border-strong: #62756a;
+    --ink: #eaf2ec;
+    --ink-muted: #a3b5aa;
+    --brand: #3dd68c;
+    --brand-strong: #6be3a8;
+    --on-brand: #052e19;
+    --brand-soft: #133224;
+    --brand-soft-ink: #8eebbe;
+    --gold: #e6b43c;
+    --on-gold: #2b1e00;
+    --info: #7db4f0;
+    --warning: #f0b957;
+    --danger: #ff8a80;
+    --danger-soft: #3a1714;
+    --focus: #7db4f0;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-on-brand: var(--on-brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-soft-ink: var(--brand-soft-ink);
+  --color-gold: var(--gold);
+  --color-on-gold: var(--on-gold);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-focus: var(--focus);
+
+  --font-display: var(--font-poppins), "DM Sans", system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, Consolas, monospace;
+
+  --text-display-xl: 48px;
+  --text-display-xl--line-height: 56px;
+  --text-display-xl--letter-spacing: -0.02em;
+  --text-display: 36px;
+  --text-display--line-height: 44px;
+  --text-display--letter-spacing: -0.015em;
+  --text-h1: 28px;
+  --text-h1--line-height: 36px;
+  --text-h1--letter-spacing: -0.01em;
+  --text-h2: 22px;
+  --text-h2--line-height: 30px;
+  --text-h3: 18px;
+  --text-h3--line-height: 26px;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 26px;
+  --text-body: 15px;
+  --text-body--line-height: 24px;
+  --text-small: 13px;
+  --text-small--line-height: 20px;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: 0.04em;
+  --text-code: 15px;
+  --text-code--line-height: 22px;
+  --text-code--letter-spacing: 0.08em;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  input[type="radio"],
+  input[type="checkbox"] {
+    accent-color: var(--brand);
+  }
+}
+
+@layer components {
+  .campo {
+    @apply h-11 rounded-md border border-border-strong bg-surface-raised px-4 text-body font-normal text-ink disabled:cursor-not-allowed disabled:bg-surface-sunken;
+  }
+
+  .boton-primario {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-4 text-body font-semibold text-on-brand hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .boton-secundario {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-4 text-body font-semibold text-ink hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .boton-peligro {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border border-danger bg-surface-raised px-4 text-body font-semibold text-danger hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .archivo {
+    @apply text-body font-normal text-ink-muted file:mr-3 file:h-11 file:cursor-pointer file:rounded-md file:border file:border-border-strong file:bg-surface-raised file:px-4 file:text-body file:font-semibold file:text-ink hover:file:bg-surface-sunken;
+  }
+
+  .enlace {
+    @apply cursor-pointer font-semibold text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .etiqueta {
+    @apply flex flex-col gap-2 text-body font-semibold text-ink;
+  }
+
+  .codigo {
+    @apply rounded-sm bg-surface-sunken px-1.5 py-0.5 font-mono text-[0.85em] font-medium text-ink;
+  }
+
+  .aviso {
+    @apply rounded-md border border-warning/40 bg-surface-raised px-4 py-3 text-warning;
+  }
+
+  .alerta-error {
+    @apply rounded-md bg-danger-soft px-4 py-3 text-danger;
+  }
+
+  .alerta-ok {
+    @apply rounded-md bg-brand-soft px-4 py-3 text-brand-soft-ink;
+  }
+}

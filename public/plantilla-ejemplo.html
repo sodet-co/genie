@@ -1,0 +1,133 @@
+<!doctype html>
+<!--
+  Plantilla de ejemplo: carta horizontal (1056 × 816 px).
+
+  - Los datos variables van entre llaves dobles: {{nombre}}, {{documento}}...
+    Cada marcador se convierte en un campo del formulario y en una columna del Excel.
+  - Para usar una imagen de fondo o un logo, escribe solo el nombre del archivo
+    (por ejemplo <img src="logo.png">) y súbelo junto con este HTML.
+  - No se ejecuta JavaScript.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Great+Vibes&family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1056px;
+        height: 816px;
+      }
+
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        color: #1f2937;
+        background: #fffdf7;
+      }
+
+      .marco {
+        position: absolute;
+        inset: 28px;
+        border: 3px solid #1e3a5f;
+        outline: 1px solid #b8963e;
+        outline-offset: -12px;
+      }
+
+      .contenido {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 120px;
+      }
+
+      .institucion {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: #1e3a5f;
+      }
+
+      h1 {
+        margin: 18px 0 6px;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 64px;
+        font-weight: 700;
+        color: #1e3a5f;
+      }
+
+      .otorga {
+        font-size: 16px;
+        color: #4b5563;
+      }
+
+      .nombre {
+        margin: 22px 0 4px;
+        font-family: "Great Vibes", cursive;
+        font-size: 66px;
+        line-height: 1.1;
+        color: #111827;
+      }
+
+      .documento {
+        font-size: 14px;
+        color: #6b7280;
+      }
+
+      .detalle {
+        margin-top: 26px;
+        max-width: 760px;
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 24px;
+        line-height: 1.4;
+      }
+
+      .firmas {
+        position: absolute;
+        bottom: 92px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 160px;
+        font-size: 13px;
+        color: #4b5563;
+      }
+
+      .firma {
+        width: 240px;
+        padding-top: 8px;
+        border-top: 1px solid #374151;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="marco"></div>
+    <div class="contenido">
+      <div class="institucion">Universidad de Ejemplo</div>
+      <h1>Certificado de participación</h1>
+      <div class="otorga">Se otorga el presente certificado a</div>
+      <div class="nombre">{{nombre}}</div>
+      <div class="documento">Documento de identidad {{documento}}</div>
+      <div class="detalle">
+        por su participación en <strong>{{evento}}</strong>, con una intensidad
+        de {{horas}} horas, realizado el {{fecha}}.
+      </div>
+    </div>
+    <div class="firmas">
+      <div class="firma">Director(a) del programa</div>
+      <div class="firma">Secretaría académica</div>
+    </div>
+  </body>
+</html>
