@@ -31,12 +31,12 @@ export function VistaPrevia({ html, marcadores, registro, pagina }: Props) {
 
   return (
     <div>
-      <p className="mb-2 font-semibold text-ink">
+      <p className="mb-2 font-medium text-ink">
         Vista previa {registro ? "" : "(sin datos todavía)"}
       </p>
       <div
         ref={contenedor}
-        className="flex w-full justify-center rounded-lg bg-surface-sunken p-6"
+        className="flex w-full justify-center rounded-md border border-border bg-surface-sunken p-3 sm:p-6"
       >
         <div
           className="overflow-hidden bg-white shadow-pop"

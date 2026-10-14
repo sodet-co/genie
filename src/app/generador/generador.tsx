@@ -53,8 +53,12 @@ export function Generador() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <Seccion numero={1} titulo="Plantilla">
+    <div className="flex flex-col gap-8 sm:gap-10">
+      <Seccion
+        numero={1}
+        titulo="Plantilla"
+        descripcion="Sube el HTML del certificado y define el tamaño de la página."
+      >
         <PasoPlantilla
           plantilla={plantilla}
           onCargar={(p) => {
@@ -78,7 +82,11 @@ export function Generador() {
       </Seccion>
 
       {plantilla && (
-        <Seccion numero={2} titulo="Registros">
+        <Seccion
+          numero={2}
+          titulo="Registros"
+          descripcion="Agrega participantes a mano o impórtalos desde un archivo de Excel."
+        >
           <PasoDatos
             marcadores={marcadores}
             registros={registros}
@@ -95,7 +103,11 @@ export function Generador() {
       )}
 
       {plantilla && registros.length > 0 && (
-        <Seccion numero={3} titulo="Generar certificados">
+        <Seccion
+          numero={3}
+          titulo="Generar certificados"
+          descripcion="Descarga todos los certificados en un ZIP o en un solo PDF."
+        >
           <PasoGenerar
             html={plantilla.html}
             pagina={pagina}
@@ -121,21 +133,24 @@ export function Generador() {
 function Seccion({
   numero,
   titulo,
+  descripcion,
   children,
 }: {
   numero: number;
   titulo: string;
+  descripcion: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg bg-surface-raised p-6 shadow-card">
-      <h2 className="mb-6 flex items-center gap-3 font-display text-h2 font-semibold">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft font-sans text-body font-semibold text-brand-soft-ink">
-          {numero}
-        </span>
-        {titulo}
-      </h2>
-      <div className="flex flex-col gap-6">{children}</div>
+    <section className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
+      <header className="lg:pt-1">
+        <p className="text-label uppercase text-ink-muted">Paso {numero}</p>
+        <h2 className="mt-1 text-h2 font-semibold">{titulo}</h2>
+        <p className="mt-1 text-small text-ink-muted">{descripcion}</p>
+      </header>
+      <div className="flex flex-col gap-6 rounded-lg border border-border bg-surface-raised p-4 shadow-card sm:p-6">
+        {children}
+      </div>
     </section>
   );
 }

@@ -66,7 +66,7 @@ export function PasoGenerar(props: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap gap-6">
+      <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:gap-6">
         {props.marcadores.length > 0 && (
           <label className="etiqueta">
             Nombrar cada archivo con
@@ -86,7 +86,7 @@ export function PasoGenerar(props: Props) {
         )}
 
         <fieldset className="flex flex-col gap-1">
-          <legend className="mb-2 font-semibold text-ink">Formato</legend>
+          <legend className="mb-2 font-medium text-ink">Formato</legend>
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -117,14 +117,14 @@ export function PasoGenerar(props: Props) {
         </Mensaje>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <button
           type="button"
           onClick={generar}
           disabled={ocupado}
           className="boton-primario"
         >
-          <Download aria-hidden size={20} strokeWidth={1.75} />
+          <Download aria-hidden size={16} strokeWidth={1.75} />
           Generar {registros.length} certificado(s)
         </button>
         {ocupado && hechos < registros.length && (
@@ -133,7 +133,7 @@ export function PasoGenerar(props: Props) {
             onClick={() => (cancelado.current = true)}
             className="boton-secundario"
           >
-            <X aria-hidden size={20} strokeWidth={1.75} />
+            <X aria-hidden size={16} strokeWidth={1.75} />
             Cancelar
           </button>
         )}
@@ -141,9 +141,9 @@ export function PasoGenerar(props: Props) {
 
       {ocupado && (
         <div className="flex flex-col gap-1">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken">
+          <div className="h-1.5 w-full overflow-hidden rounded-sm bg-surface-sunken">
             <div
-              className="h-full rounded-full bg-brand transition-all"
+              className="h-full bg-brand transition-all"
               style={{ width: `${porcentaje}%` }}
             />
           </div>

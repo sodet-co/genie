@@ -65,7 +65,7 @@ function Pestana({
       role="tab"
       aria-selected={activa}
       onClick={onClick}
-      className={`-mb-px h-11 border-b-2 px-4 font-semibold ${
+      className={`-mb-px h-10 border-b-2 px-3 font-medium ${
         activa
           ? "border-brand text-brand"
           : "border-transparent text-ink-muted hover:text-ink"
@@ -124,7 +124,7 @@ function FormularioManual({
       </div>
       <div>
         <button type="submit" className="boton-primario">
-          <Plus aria-hidden size={20} strokeWidth={1.75} />
+          <Plus aria-hidden size={16} strokeWidth={1.75} />
           Agregar a la lista
         </button>
       </div>
@@ -176,18 +176,18 @@ function CargaExcel({
         ))}
         ). No importan mayúsculas, tildes ni el orden de las columnas.
       </p>
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
         <button
           type="button"
           onClick={() => descargarModelo(marcadores)}
-          className="boton-secundario"
+          className="boton-secundario self-start"
         >
-          <Download aria-hidden size={20} strokeWidth={1.75} />
+          <Download aria-hidden size={16} strokeWidth={1.75} />
           Descargar Excel modelo
         </button>
         <label className="etiqueta">
           <span className="flex items-center gap-2">
-            <Upload aria-hidden size={20} strokeWidth={1.75} />
+            <Upload aria-hidden size={16} strokeWidth={1.75} />
             Archivo con los registros
           </span>
           <input
@@ -238,7 +238,7 @@ function TablaRegistros({
 }: Props) {
   if (registros.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-border-strong p-6 text-center text-ink-muted">
+      <p className="rounded-md border border-dashed border-border-strong bg-surface p-6 text-center text-ink-muted">
         Aún no hay registros.
       </p>
     );
@@ -246,8 +246,8 @@ function TablaRegistros({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold text-ink">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-medium text-ink">
           {registros.length} registro(s)
           {registros.length > FILAS_VISIBLES &&
             ` · se muestran los primeros ${FILAS_VISIBLES}`}
@@ -261,33 +261,33 @@ function TablaRegistros({
           }}
           className="boton-peligro"
         >
-          <Trash2 aria-hidden size={20} strokeWidth={1.75} />
+          <Trash2 aria-hidden size={16} strokeWidth={1.75} />
           Vaciar lista
         </button>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface-raised">
+      <div className="overflow-x-auto rounded-md border border-border bg-surface-raised">
         <table className="w-full text-left">
           <thead className="border-b border-border bg-surface-sunken text-label uppercase text-ink-muted">
             <tr>
-              <th className="px-3 py-3 font-semibold">#</th>
+              <th className="px-3 py-2.5 font-medium">#</th>
               {marcadores.map((m) => (
-                <th key={m} className="px-3 py-3 font-semibold">
+                <th key={m} className="px-3 py-2.5 font-medium">
                   {m}
                 </th>
               ))}
-              <th className="px-3 py-3" />
+              <th className="px-3 py-2.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {registros.slice(0, FILAS_VISIBLES).map((registro, i) => (
               <tr key={i} className={i === indicePrevia ? "bg-brand-soft" : undefined}>
-                <td className="px-3 py-3 text-ink-muted">{i + 1}</td>
+                <td className="px-3 py-2.5 text-ink-muted">{i + 1}</td>
                 {marcadores.map((m) => (
-                  <td key={m} className="max-w-56 truncate px-3 py-3">
+                  <td key={m} className="max-w-56 truncate px-3 py-2.5">
                     {registro[m]}
                   </td>
                 ))}
-                <td className="whitespace-nowrap px-3 py-3 text-right">
+                <td className="whitespace-nowrap px-3 py-2.5 text-right">
                   <div className="flex justify-end gap-3">
                     <button type="button" onClick={() => onVer(i)} className="enlace inline-flex items-center gap-1">
                       <Eye aria-hidden size={16} strokeWidth={1.75} />

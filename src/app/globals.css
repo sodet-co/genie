@@ -1,54 +1,56 @@
 @import "tailwindcss";
 
-/* Tokens del design system Genie (claro / oscuro). */
+/* Tokens de la interfaz (claro / oscuro): neutros sobrios, verde solo para la acción principal. */
 :root {
-  --surface: #fafbf7;
+  --surface: #f5f6f8;
   --surface-raised: #ffffff;
-  --surface-sunken: #eff3ed;
-  --border: #dce3dc;
-  --border-strong: #7d8e84;
-  --ink: #13201a;
-  --ink-muted: #516158;
-  --brand: #0b7a43;
-  --brand-strong: #075c32;
+  --surface-sunken: #f0f2f5;
+  --border: #e2e5ea;
+  --border-strong: #8c94a0;
+  --ink: #111827;
+  --ink-muted: #5b6472;
+  --brand: #0b6b3a;
+  --brand-strong: #08532d;
   --on-brand: #ffffff;
-  --brand-soft: #e3f5ea;
-  --brand-soft-ink: #075c32;
+  --brand-soft: #ecf5ef;
+  --brand-soft-ink: #08532d;
   --gold: #e0a82e;
   --on-gold: #2b1e00;
   --info: #1d5fa8;
   --warning: #8a5a00;
+  --warning-soft: #fdf7ea;
   --danger: #b42318;
-  --danger-soft: #fdecea;
+  --danger-soft: #fef3f2;
   --focus: #1d5fa8;
-  --shadow-card: 0 1px 2px rgba(19, 32, 26, 0.06), 0 4px 12px rgba(19, 32, 26, 0.06);
-  --shadow-pop: 0 8px 28px rgba(19, 32, 26, 0.16);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-pop: 0 4px 16px rgba(16, 24, 40, 0.12);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface: #0e1511;
-    --surface-raised: #162019;
-    --surface-sunken: #0a100d;
-    --border: #2a372f;
-    --border-strong: #62756a;
-    --ink: #eaf2ec;
-    --ink-muted: #a3b5aa;
-    --brand: #3dd68c;
-    --brand-strong: #6be3a8;
-    --on-brand: #052e19;
-    --brand-soft: #133224;
-    --brand-soft-ink: #8eebbe;
+    --surface: #0f1115;
+    --surface-raised: #171a20;
+    --surface-sunken: #0b0d10;
+    --border: #272b33;
+    --border-strong: #5f6773;
+    --ink: #e6e8eb;
+    --ink-muted: #9aa3ae;
+    --brand: #4cc38a;
+    --brand-strong: #74d3a4;
+    --on-brand: #06260f;
+    --brand-soft: #13261c;
+    --brand-soft-ink: #8fdcb5;
     --gold: #e6b43c;
     --on-gold: #2b1e00;
     --info: #7db4f0;
-    --warning: #f0b957;
-    --danger: #ff8a80;
-    --danger-soft: #3a1714;
+    --warning: #e9b45a;
+    --warning-soft: #2a2110;
+    --danger: #f97066;
+    --danger-soft: #2d1513;
     --focus: #7db4f0;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
-    --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.6);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
   }
 }
@@ -70,43 +72,32 @@
   --color-on-gold: var(--on-gold);
   --color-info: var(--info);
   --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-focus: var(--focus);
 
-  --font-display: var(--font-poppins), "DM Sans", system-ui, sans-serif;
-  --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, Consolas, monospace;
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Consolas, monospace;
 
-  --text-display-xl: 48px;
-  --text-display-xl--line-height: 56px;
-  --text-display-xl--letter-spacing: -0.02em;
-  --text-display: 36px;
-  --text-display--line-height: 44px;
-  --text-display--letter-spacing: -0.015em;
-  --text-h1: 28px;
-  --text-h1--line-height: 36px;
+  --text-h1: 24px;
+  --text-h1--line-height: 32px;
   --text-h1--letter-spacing: -0.01em;
-  --text-h2: 22px;
-  --text-h2--line-height: 30px;
-  --text-h3: 18px;
-  --text-h3--line-height: 26px;
-  --text-body-lg: 17px;
-  --text-body-lg--line-height: 26px;
-  --text-body: 15px;
-  --text-body--line-height: 24px;
+  --text-h2: 16px;
+  --text-h2--line-height: 24px;
+  --text-body-lg: 15px;
+  --text-body-lg--line-height: 24px;
+  --text-body: 14px;
+  --text-body--line-height: 22px;
   --text-small: 13px;
   --text-small--line-height: 20px;
-  --text-label: 12px;
+  --text-label: 11px;
   --text-label--line-height: 16px;
-  --text-label--letter-spacing: 0.04em;
-  --text-code: 15px;
-  --text-code--line-height: 22px;
-  --text-code--letter-spacing: 0.08em;
+  --text-label--letter-spacing: 0.06em;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
   --shadow-card: var(--shadow-card);
   --shadow-pop: var(--shadow-pop);
@@ -126,46 +117,46 @@
 
 @layer components {
   .campo {
-    @apply h-11 rounded-md border border-border-strong bg-surface-raised px-4 text-body font-normal text-ink disabled:cursor-not-allowed disabled:bg-surface-sunken;
+    @apply h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface-raised px-3 text-body text-ink disabled:cursor-not-allowed disabled:bg-surface-sunken;
   }
 
   .boton-primario {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-4 text-body font-semibold text-on-brand hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-brand px-3.5 text-body font-medium text-on-brand hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .boton-secundario {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-4 text-body font-semibold text-ink hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-3.5 text-body font-medium text-ink hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .boton-peligro {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border border-danger bg-surface-raised px-4 text-body font-semibold text-danger hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-3.5 text-body font-medium text-danger hover:border-danger hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .archivo {
-    @apply text-body font-normal text-ink-muted file:mr-3 file:h-11 file:cursor-pointer file:rounded-md file:border file:border-border-strong file:bg-surface-raised file:px-4 file:text-body file:font-semibold file:text-ink hover:file:bg-surface-sunken;
+    @apply w-full max-w-full min-w-0 text-body text-ink-muted file:mr-3 file:h-9 file:cursor-pointer file:rounded-md file:border file:border-border-strong file:bg-surface-raised file:px-3.5 file:text-body file:font-medium file:text-ink hover:file:bg-surface-sunken;
   }
 
   .enlace {
-    @apply cursor-pointer font-semibold text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50;
+    @apply cursor-pointer font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .etiqueta {
-    @apply flex flex-col gap-2 text-body font-semibold text-ink;
+    @apply flex flex-col gap-1.5 text-small font-medium text-ink;
   }
 
   .codigo {
-    @apply rounded-sm bg-surface-sunken px-1.5 py-0.5 font-mono text-[0.85em] font-medium text-ink;
+    @apply rounded-sm border border-border bg-surface-sunken px-1 py-px font-mono text-[0.85em] text-ink [overflow-wrap:anywhere];
   }
 
   .aviso {
-    @apply rounded-md border border-warning/40 bg-surface-raised px-4 py-3 text-warning;
+    @apply rounded-md border border-warning/25 bg-warning-soft px-3.5 py-2.5 text-warning;
   }
 
   .alerta-error {
-    @apply rounded-md bg-danger-soft px-4 py-3 text-danger;
+    @apply rounded-md border border-danger/25 bg-danger-soft px-3.5 py-2.5 text-danger;
   }
 
   .alerta-ok {
-    @apply rounded-md bg-brand-soft px-4 py-3 text-brand-soft-ink;
+    @apply rounded-md border border-brand/25 bg-brand-soft px-3.5 py-2.5 text-brand-soft-ink;
   }
 }

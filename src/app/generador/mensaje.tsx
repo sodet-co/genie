@@ -17,7 +17,7 @@ export function Mensaje({
   const { Icono, clase, rol } = TIPOS[tipo];
   return (
     <div role={rol} className={`${clase} flex items-start gap-2`}>
-      <Icono aria-hidden size={20} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+      <Icono aria-hidden size={16} strokeWidth={1.75} className="mt-[3px] shrink-0" />
       <p>{children}</p>
     </div>
   );

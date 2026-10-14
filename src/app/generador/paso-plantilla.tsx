@@ -114,10 +114,10 @@ export function PasoPlantilla(props: Props) {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-end gap-4">
-        <label className="etiqueta">
+      <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-end">
+        <label className="etiqueta col-span-2">
           <span className="flex items-center gap-2">
-            <Upload aria-hidden size={20} strokeWidth={1.75} />
+            <Upload aria-hidden size={16} strokeWidth={1.75} />
             Archivos de la plantilla
           </span>
           <input
@@ -156,7 +156,7 @@ export function PasoPlantilla(props: Props) {
           </select>
         </label>
 
-        <p className="pb-2 text-ink-muted">
+        <p className="col-span-2 text-ink-muted sm:pb-2">
           Diseña el HTML a{" "}
           <strong>
             {pagina.anchoPx} × {pagina.altoPx} px
