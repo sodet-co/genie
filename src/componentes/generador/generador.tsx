@@ -8,6 +8,7 @@ import {
   type Registro,
   type Tamano,
 } from "@/lib/plantilla";
+import { adivinarTipo, type TipoCertificado } from "@/lib/tipos";
 import { Mensaje } from "./mensaje";
 import { PasoDatos } from "./paso-datos";
 import { PasoGenerar } from "./paso-generar";
@@ -18,6 +19,7 @@ export function Generador() {
   const [plantilla, setPlantilla] = useState<Plantilla | null>(null);
   const [tamano, setTamano] = useState<Tamano>("carta");
   const [orientacion, setOrientacion] = useState<Orientacion>("horizontal");
+  const [tipo, setTipo] = useState<TipoCertificado | "">("");
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [indicePrevia, setIndicePrevia] = useState(0);
   const [ocupado, setOcupado] = useState(false);
@@ -31,6 +33,12 @@ export function Generador() {
   const campoNombreEfectivo = marcadores.includes(campoNombre)
     ? campoNombre
     : campoNombrePorDefecto;
+  // Hoy la clave de búsqueda es el nombre; cuando haya documento se elige ese.
+  const campoClavePorDefecto =
+    marcadores.find((m) => /^(documento|cedula|cédula|identificacion|identificación)$/i.test(m)) ??
+    campoNombreEfectivo;
+  const [campoClave, setCampoClave] = useState("");
+  const campoClaveEfectivo = marcadores.includes(campoClave) ? campoClave : campoClavePorDefecto;
 
   const registroPrevia = registros[Math.min(indicePrevia, registros.length - 1)];
 
@@ -64,6 +72,7 @@ export function Generador() {
           onCargar={(p) => {
             setPlantilla(p);
             setIndicePrevia(0);
+            setTipo(adivinarTipo(p.nombreArchivo));
           }}
           tamano={tamano}
           orientacion={orientacion}
@@ -105,16 +114,20 @@ export function Generador() {
       {plantilla && registros.length > 0 && (
         <Seccion
           numero={3}
-          titulo="Generar certificados"
-          descripcion="Descarga todos los certificados en un ZIP o en un solo PDF."
+          titulo="Publicar"
+          descripcion="Genera los PDF y déjalos disponibles en la página pública."
         >
           <PasoGenerar
             html={plantilla.html}
             pagina={pagina}
             marcadores={marcadores}
             registros={registros}
+            campoClave={campoClaveEfectivo}
+            onCampoClave={setCampoClave}
             campoNombre={campoNombreEfectivo}
             onCampoNombre={setCampoNombre}
+            tipo={tipo}
+            onTipo={setTipo}
             ocupado={ocupado}
             onOcupado={setOcupado}
           />

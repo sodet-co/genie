@@ -1,75 +1,122 @@
-import { zipSync } from "fflate";
+import { normalizarBusqueda } from "./busqueda";
 import { crearPdf, descargar, Renderizador } from "./pdf";
+import type { TipoCertificado } from "./tipos";
 import { nombreSeguro, rellenar, type Pagina, type Registro } from "./plantilla";
-
-export type ModoSalida = "zip" | "unico";
 
 type Opciones = {
   html: string;
   pagina: Pagina;
-  // Marcador cuyo valor da nombre a cada archivo (ej. "nombre").
+  // Marcador cuyo valor da nombre al archivo y a la fila (ej. "nombre").
   campoNombre: string;
 };
 
 export class Cancelado extends Error {}
+export class SesionVencida extends Error {}
 
-function nombreBase(registro: Registro, campoNombre: string, indice: number) {
-  const valor = registro[campoNombre]?.trim();
-  return valor ? nombreSeguro(valor) : `certificado-${indice + 1}`;
-}
-
+// Descarga local de un solo PDF, para revisarlo antes de publicar.
 export async function generarIndividual(registro: Registro, opciones: Opciones) {
   const renderizador = new Renderizador(opciones.pagina);
   try {
     const imagen = await renderizador.renderizar(rellenar(opciones.html, registro));
     const pdf = await crearPdf([imagen], opciones.pagina);
-    descargar(pdf, `${nombreBase(registro, opciones.campoNombre, 0)}.pdf`, "application/pdf");
+    const nombre = registro[opciones.campoNombre]?.trim();
+    descargar(pdf, `${nombre ? nombreSeguro(nombre) : "certificado"}.pdf`, "application/pdf");
   } finally {
     renderizador.destruir();
   }
 }
 
-export async function generarLote(
+export type ProblemaRegistro = { fila: number; motivo: string };
+
+// Antes de publicar: toda fila necesita clave y no puede haber dos con la
+// misma clave (la segunda reemplazaría a la primera).
+export function revisarClaves(registros: Registro[], campoClave: string) {
+  const problemas: ProblemaRegistro[] = [];
+  const vistas = new Map<string, number>();
+  registros.forEach((registro, i) => {
+    const clave = normalizarBusqueda(registro[campoClave] ?? "");
+    if (!clave) {
+      problemas.push({ fila: i + 1, motivo: `"${campoClave}" está vacío` });
+      return;
+    }
+    const anterior = vistas.get(clave);
+    if (anterior !== undefined) {
+      problemas.push({
+        fila: i + 1,
+        motivo: `"${registro[campoClave]}" se repite (igual que la fila ${anterior})`,
+      });
+    } else {
+      vistas.set(clave, i + 1);
+    }
+  });
+  return problemas;
+}
+
+export type ResultadoPublicacion = {
+  nuevos: number;
+  reemplazados: number;
+  // Personas que ya tenían un certificado de otro tipo (se reemplazó).
+  cambiosTipo: { fila: number; tipoAnterior: string }[];
+  fallidos: ProblemaRegistro[];
+};
+
+// Genera cada PDF en el navegador y lo sube al servidor, que lo guarda y lo
+// deja disponible en el portal público.
+export async function publicarLote(
   registros: Registro[],
-  modo: ModoSalida,
   opciones: Opciones & {
+    campoClave: string;
+    tipo: TipoCertificado;
     onProgreso: (hechos: number) => void;
     estaCancelado: () => boolean;
   },
-) {
+): Promise<ResultadoPublicacion> {
+  const resultado: ResultadoPublicacion = {
+    nuevos: 0,
+    reemplazados: 0,
+    cambiosTipo: [],
+    fallidos: [],
+  };
   const renderizador = new Renderizador(opciones.pagina);
   try {
-    const imagenes: Uint8Array[] = [];
-    const archivos: Record<string, Uint8Array> = {};
-    const usados = new Map<string, number>();
-
     for (let i = 0; i < registros.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const imagen = await renderizador.renderizar(
-        rellenar(opciones.html, registros[i]),
-      );
+      const registro = registros[i];
+      try {
+        const imagen = await renderizador.renderizar(rellenar(opciones.html, registro));
+        const pdf = await crearPdf([imagen], opciones.pagina);
 
-      if (modo === "unico") {
-        imagenes.push(imagen);
-      } else {
-        const base = nombreBase(registros[i], opciones.campoNombre, i);
-        const clave = base.toLowerCase();
-        const repeticiones = (usados.get(clave) ?? 0) + 1;
-        usados.set(clave, repeticiones);
-        const nombre = repeticiones > 1 ? `${base}-${repeticiones}` : base;
-        archivos[`${nombre}.pdf`] = await crearPdf([imagen], opciones.pagina);
+        const formulario = new FormData();
+        formulario.set("archivo", new Blob([pdf as Uint8Array<ArrayBuffer>], { type: "application/pdf" }), "certificado.pdf");
+        formulario.set("clave", registro[opciones.campoClave] ?? "");
+        formulario.set("nombre", registro[opciones.campoNombre] ?? "");
+        formulario.set("tipo", opciones.tipo);
+        formulario.set("datos", JSON.stringify(registro));
+
+        const respuesta = await fetch("/api/admin/certificados", {
+          method: "POST",
+          body: formulario,
+        });
+        if (respuesta.status === 401) throw new SesionVencida();
+        const cuerpo = await respuesta.json().catch(() => null);
+        if (!respuesta.ok) {
+          resultado.fallidos.push({ fila: i + 1, motivo: cuerpo?.error ?? `error ${respuesta.status}` });
+        } else if (cuerpo?.reemplazado) {
+          resultado.reemplazados++;
+          if (cuerpo.tipoAnterior) {
+            resultado.cambiosTipo.push({ fila: i + 1, tipoAnterior: cuerpo.tipoAnterior });
+          }
+        } else {
+          resultado.nuevos++;
+        }
+      } catch (error) {
+        if (error instanceof SesionVencida) throw error;
+        console.error(error);
+        resultado.fallidos.push({ fila: i + 1, motivo: "no se pudo generar o subir el PDF" });
       }
       opciones.onProgreso(i + 1);
     }
-
-    if (modo === "unico") {
-      const pdf = await crearPdf(imagenes, opciones.pagina);
-      descargar(pdf, "certificados.pdf", "application/pdf");
-    } else {
-      // Los PDF ya van comprimidos por dentro: level 0 evita trabajo inútil.
-      const zip = zipSync(archivos, { level: 0 });
-      descargar(zip, "certificados.zip", "application/zip");
-    }
+    return resultado;
   } finally {
     renderizador.destruir();
   }
