@@ -58,3 +58,6 @@ next-env.d.ts
 .roo
 .trae
 .windsurf
+
+# Descargas de prueba
+plantillas/*.pdf
