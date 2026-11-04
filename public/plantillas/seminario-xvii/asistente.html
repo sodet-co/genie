@@ -2,6 +2,7 @@
 <!--
   Certificado de asistente · XVII Seminario Internacional Investigación Urbano Regional.
   Fondo: el PNG con el mismo nombre en esta carpeta.
+  Nombre y título se reducen solos si no caben en su caja (data-ajustar).
   Marcadores: {{nombre}}.
 -->
 <html lang="es">
@@ -45,7 +46,7 @@
 
       .nombre p {
         margin: 0;
-        font-size: 28px;
+        font-size: 32px;
         line-height: 1.12;
         font-weight: 700;
         text-transform: uppercase;
@@ -59,7 +60,7 @@
 
       .titulo p {
         margin: 0;
-        font-size: 13.5px;
+        font-size: 17.5px;
         line-height: 1.2;
         font-weight: 600;
         font-style: italic;
@@ -67,7 +68,7 @@
     </style>
   </head>
   <body>
-    <div class="nombre" style="top: 238px; height: 66px">
+    <div class="nombre" data-ajustar data-ajustar-min="20" style="top: 238px; height: 66px">
       <p>{{nombre}}</p>
     </div>
   </body>

@@ -2,6 +2,7 @@
 <!--
   Certificado de conferencista · XVII Seminario Internacional Investigación Urbano Regional.
   Fondo: el PNG con el mismo nombre en esta carpeta.
+  Nombre y título se reducen solos si no caben en su caja (data-ajustar).
   Marcadores: {{nombre}} y {{titulo}}.
 -->
 <html lang="es">
@@ -45,7 +46,7 @@
 
       .nombre p {
         margin: 0;
-        font-size: 28px;
+        font-size: 32px;
         line-height: 1.12;
         font-weight: 700;
         text-transform: uppercase;
@@ -53,13 +54,13 @@
       }
 
       .titulo {
-        left: 244px;
-        width: 568px;
+        left: 208px;
+        width: 640px;
       }
 
       .titulo p {
         margin: 0;
-        font-size: 13.5px;
+        font-size: 17.5px;
         line-height: 1.2;
         font-weight: 600;
         font-style: italic;
@@ -67,10 +68,10 @@
     </style>
   </head>
   <body>
-    <div class="nombre" style="top: 166px; height: 78px">
+    <div class="nombre" data-ajustar data-ajustar-min="20" style="top: 166px; height: 78px">
       <p>{{nombre}}</p>
     </div>
-    <div class="titulo" style="top: 377px; height: 37px">
+    <div class="titulo" data-ajustar data-ajustar-min="11" style="top: 377px; height: 37px">
       <p>{{titulo}}</p>
     </div>
   </body>

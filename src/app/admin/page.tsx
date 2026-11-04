@@ -7,6 +7,7 @@ import {
 } from "@/componentes/admin/regenerar";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { Mensaje } from "@/componentes/generador/mensaje";
+import { normalizarBusqueda } from "@/lib/busqueda";
 import { esTipo, etiquetaTipo, TIPOS } from "@/lib/tipos";
 import {
   clienteAdmin,
@@ -128,7 +129,7 @@ export default async function Certificados({
       ) : (
         <>
           {/* Celular: tarjetas */}
-          <ul className="flex flex-col divide-y divide-border rounded-md border border-border bg-surface-raised sm:hidden">
+          <ul className="flex flex-col divide-y divide-border rounded-md border border-border bg-surface-raised md:hidden">
             {filas.map((f) => (
               <li key={f.id} className="flex flex-col gap-2 p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -158,39 +159,54 @@ export default async function Certificados({
             ))}
           </ul>
           {/* Pantallas grandes: tabla */}
-          <div className="hidden overflow-x-auto rounded-md border border-border bg-surface-raised sm:block">
+          <div className="hidden overflow-hidden rounded-md border border-border bg-surface-raised md:block">
             <table className="w-full text-left">
               <thead className="border-b border-border bg-surface-sunken text-label uppercase text-ink-muted">
                 <tr>
                   <th className="px-3 py-2.5 font-medium">Nombre</th>
                   <th className="px-3 py-2.5 font-medium">Tipo</th>
-                  <th className="px-3 py-2.5 font-medium">Clave de búsqueda</th>
-                  <th className="px-3 py-2.5 font-medium">Descargas</th>
-                  <th className="px-3 py-2.5 font-medium">Generado</th>
+                  <th className="px-3 py-2.5 text-right font-medium">
+                    Descargas
+                  </th>
+                  <th className="hidden px-3 py-2.5 font-medium lg:table-cell">
+                    Generado
+                  </th>
                   <th className="px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filas.map((f) => (
                   <tr key={f.id}>
-                    <td className="max-w-64 truncate px-3 py-2.5 font-medium">
-                      {f.nombre}
+                    {/* w-full + max-w-0: el nombre usa el espacio que sobra y se
+                        corta con "…" en vez de ensanchar la tabla. */}
+                    <td className="w-full max-w-0 px-3 py-2.5">
+                      <span
+                        className="block truncate font-medium"
+                        title={f.nombre}
+                      >
+                        {f.nombre}
+                      </span>
+                      {normalizarBusqueda(f.clave_original) !==
+                        normalizarBusqueda(f.nombre) && (
+                        <span className="block truncate text-small text-ink-muted">
+                          Clave: {f.clave_original}
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5">
                       {etiquetaTipo(f.tipo)}
                     </td>
-                    <td className="max-w-56 truncate px-3 py-2.5 text-ink-muted">
-                      {f.clave_original}
-                    </td>
-                    <td className="px-3 py-2.5">
+                    <td
+                      className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums"
+                      title={
+                        f.ultima_descarga
+                          ? `Última descarga: ${fecha.format(new Date(f.ultima_descarga))}`
+                          : "Aún no se ha descargado"
+                      }
+                    >
                       {f.descargas}
-                      {f.ultima_descarga && (
-                        <span className="block text-small text-ink-muted">
-                          última {fecha.format(new Date(f.ultima_descarga))}
-                        </span>
-                      )}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-ink-muted">
+                    <td className="hidden whitespace-nowrap px-3 py-2.5 text-ink-muted lg:table-cell">
                       {fecha.format(new Date(f.actualizado_en))}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-right">

@@ -1,5 +1,6 @@
 import { domToJpeg, domToPng } from "modern-screenshot";
 import { PDFDocument } from "pdf-lib";
+import { ajustarTextos } from "./ajustar";
 import type { Pagina } from "./plantilla";
 
 // 2.5 × 96 = 240 ppp: suficiente para imprimir sin que el archivo pese demasiado.
@@ -39,6 +40,7 @@ export class Renderizador {
     if (!doc) throw new Error("No se pudo preparar la plantilla.");
 
     await doc.fonts.ready;
+    ajustarTextos(doc);
     await Promise.all(
       Array.from(doc.images).map((img) => img.decode().catch(() => undefined)),
     );

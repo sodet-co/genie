@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ajustarTextos } from "@/lib/ajustar";
 import { rellenar, type Pagina, type Registro } from "@/lib/plantilla";
 
 type Props = {
@@ -48,8 +49,16 @@ export function VistaPrevia({ html, marcadores, registro, pagina }: Props) {
           {escala > 0 && (
             <iframe
               title="Vista previa del certificado"
-              sandbox=""
+              // Sin allow-scripts la plantilla no ejecuta JavaScript; con
+              // allow-same-origin la app puede aplicar el autoajuste de textos.
+              sandbox="allow-same-origin"
               srcDoc={rellenar(html, datos)}
+              onLoad={async (e) => {
+                const doc = e.currentTarget.contentDocument;
+                if (!doc) return;
+                await doc.fonts.ready;
+                ajustarTextos(doc);
+              }}
               style={{
                 width: pagina.anchoPx,
                 height: pagina.altoPx,
