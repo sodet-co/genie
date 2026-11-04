@@ -16,12 +16,23 @@ export async function iniciarSesion(
   const correo = String(formulario.get("correo") ?? "").trim();
   const contrasena = String(formulario.get("contrasena") ?? "");
   // Un correo fuera de la lista recibe el mismo mensaje que una contraseña mala.
-  if (!correo || !contrasena || !esCorreoAdmin(correo)) return { error: CREDENCIALES };
+  if (!correo || !contrasena) return { error: CREDENCIALES };
+  if (!esCorreoAdmin(correo)) {
+    // Solo en los logs del servidor: el usuario siempre ve el mensaje genérico.
+    console.warn(
+      `[ingreso] rechazado: el correo no está en ADMIN_EMAILS (variable ${
+        process.env.ADMIN_EMAILS?.trim() ? "definida" : "VACÍA o no configurada"
+      })`,
+    );
+    return { error: CREDENCIALES };
+  }
 
   const auth = createAuthActions({ cookies: await cookies() });
   const { error } = await auth.signInWithPassword({ email: correo, password: contrasena });
   if (error) {
-    console.error(error);
+    console.error(
+      `[ingreso] InsForge rechazó el inicio de sesión (${error.statusCode ?? "?"}): ${error.message}`,
+    );
     return { error: CREDENCIALES };
   }
   redirect("/admin");
