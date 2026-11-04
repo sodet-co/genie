@@ -2,7 +2,7 @@
 
 import { Check, LoaderCircle, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialogo } from "@/componentes/dialogo";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { ResumenPublicacion } from "@/componentes/generador/resultado-publicacion";
@@ -12,6 +12,8 @@ import {
   type ResultadoPublicacion,
 } from "@/lib/generar";
 import { regenerar, type CertificadoRegenerable } from "@/lib/regenerar";
+
+const ESPERA_MS = 4000;
 
 // Regenera un certificado con la plantilla actual y sus datos guardados.
 export function BotonRegenerar({
@@ -26,7 +28,17 @@ export function BotonRegenerar({
     "listo",
   );
 
+  // Tras regenerar, el check se muestra unos segundos (sin poder volver a hacer
+  // clic, para evitar dobles clics) y el botón queda listo otra vez: se puede
+  // regenerar las veces que haga falta.
+  useEffect(() => {
+    if (estado !== "ok") return;
+    const espera = setTimeout(() => setEstado("listo"), ESPERA_MS);
+    return () => clearTimeout(espera);
+  }, [estado]);
+
   async function alHacerClic() {
+    if (estado === "ok") return;
     setEstado("trabajando");
     try {
       const r = await regenerar([certificado], {
@@ -63,6 +75,7 @@ export function BotonRegenerar({
       type="button"
       onClick={alHacerClic}
       disabled={estado === "trabajando"}
+      aria-disabled={estado === "ok"}
       aria-label={comoBoton ? undefined : texto}
       data-tooltip={comoBoton ? undefined : texto}
       className={
