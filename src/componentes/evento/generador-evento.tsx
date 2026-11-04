@@ -559,6 +559,7 @@ function Publicar({
           registro: { nombre: p.nombre, titulo: p.titulo },
           html: plantilla.html,
           tipo,
+          plantilla: buscarPlantillaPorTipo(tipo)?.id,
         };
       });
       setResultado(

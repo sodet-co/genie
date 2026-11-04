@@ -1,6 +1,10 @@
 import { Download, Search } from "lucide-react";
 import Link from "next/link";
 import { BotonGenerar } from "@/componentes/admin/boton-generar";
+import {
+  BotonRegenerar,
+  BotonRegenerarTodos,
+} from "@/componentes/admin/regenerar";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { esTipo, etiquetaTipo, TIPOS } from "@/lib/tipos";
@@ -18,6 +22,8 @@ type Fila = Pick<
   | "clave_original"
   | "nombre"
   | "tipo"
+  | "plantilla"
+  | "datos"
   | "descargas"
   | "ultima_descarga"
   | "actualizado_en"
@@ -41,7 +47,7 @@ export default async function Certificados({
   let consulta = clienteAdmin()
     .database.from(TABLA)
     .select(
-      "id, clave_original, nombre, tipo, descargas, ultima_descarga, actualizado_en",
+      "id, clave_original, nombre, tipo, plantilla, datos, descargas, ultima_descarga, actualizado_en",
       {
         count: "exact",
       },
@@ -71,7 +77,10 @@ export default async function Certificados({
             pública.
           </p>
         </div>
-        <BotonGenerar />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {total > 0 && <BotonRegenerarTodos />}
+          <BotonGenerar />
+        </div>
       </div>
 
       <form
@@ -142,6 +151,7 @@ export default async function Certificados({
                     <Download aria-hidden size={16} strokeWidth={1.75} />
                     PDF
                   </a>
+                  {f.plantilla && <BotonRegenerar certificado={f} comoBoton />}
                   <BotonEliminar id={f.id} nombre={f.nombre} comoBoton />
                 </div>
               </li>
@@ -192,6 +202,7 @@ export default async function Certificados({
                           <Download aria-hidden size={16} strokeWidth={1.75} />
                           PDF
                         </a>
+                        {f.plantilla && <BotonRegenerar certificado={f} />}
                         <BotonEliminar id={f.id} nombre={f.nombre} />
                       </div>
                     </td>

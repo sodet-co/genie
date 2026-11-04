@@ -47,6 +47,7 @@ export type FilaCertificado = {
   clave_original: string;
   nombre: string;
   tipo: string;
+  plantilla: string | null;
   datos: Record<string, string>;
   archivo_key: string;
   descargas: number;

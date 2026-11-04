@@ -1,6 +1,12 @@
 import { LARGO_MAXIMO_CLAVE, normalizarBusqueda } from "@/lib/busqueda";
+import { PLANTILLAS_EVENTO } from "@/lib/plantillas-evento";
 import { esTipo } from "@/lib/tipos";
-import { BUCKET, clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
+import {
+  BUCKET,
+  clienteAdmin,
+  TABLA,
+  usuarioAdmin,
+} from "@/lib/servidor/insforge";
 
 const TAMANO_MAXIMO = 15 * 1024 * 1024;
 
@@ -11,7 +17,8 @@ function error(estado: number, mensaje: string) {
 // Publica (o reemplaza) el PDF de una persona. Lo llama el generador del panel
 // después de crear cada PDF en el navegador.
 export async function POST(request: Request) {
-  if (!(await usuarioAdmin())) return error(401, "Sesión vencida. Vuelve a ingresar.");
+  if (!(await usuarioAdmin()))
+    return error(401, "Sesión vencida. Vuelve a ingresar.");
 
   const formulario = await request.formData();
   const archivo = formulario.get("archivo");
@@ -19,6 +26,11 @@ export async function POST(request: Request) {
   const nombre = String(formulario.get("nombre") ?? "").trim() || claveOriginal;
   const clave = normalizarBusqueda(claveOriginal);
   const tipo = formulario.get("tipo");
+  const idPlantilla = formulario.get("plantilla");
+  // Solo se guardan plantillas del evento conocidas (las que se pueden regenerar).
+  const plantilla = PLANTILLAS_EVENTO.some((p) => p.id === idPlantilla)
+    ? String(idPlantilla)
+    : null;
 
   if (!(archivo instanceof Blob)) return error(400, "Falta el PDF.");
   if (!esTipo(tipo)) return error(400, "Tipo de certificado inválido.");
@@ -59,7 +71,15 @@ export async function POST(request: Request) {
     return error(500, "No se pudo guardar el PDF.");
   }
 
-  const fila = { clave, clave_original: claveOriginal, nombre, tipo, datos, archivo_key: archivoKey };
+  const fila = {
+    clave,
+    clave_original: claveOriginal,
+    nombre,
+    tipo,
+    plantilla,
+    datos,
+    archivo_key: archivoKey,
+  };
   const { error: errorGuardado } = existente
     ? await db.database
         .from(TABLA)

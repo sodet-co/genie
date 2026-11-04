@@ -121,6 +121,12 @@ export type ItemPublicacion = {
   // Plantilla ya preparada (cada fila puede usar una distinta).
   html: string;
   tipo: TipoCertificado;
+  // Id de la plantilla del evento (permite regenerar después); sin él, el
+  // certificado queda como de "otro evento".
+  plantilla?: string;
+  // Al regenerar se usan la clave y el nombre guardados, no los del registro.
+  clave?: string;
+  nombre?: string;
 };
 
 // Genera cada PDF en el navegador y lo sube al servidor, que lo guarda y lo
@@ -146,7 +152,7 @@ export async function publicarLote(
   try {
     for (let i = 0; i < items.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const { registro, html, tipo, fila } = items[i];
+      const { registro, html, tipo, fila, plantilla, clave, nombre } = items[i];
       try {
         const pdf = await generarPdf(
           renderizador,
@@ -163,9 +169,13 @@ export async function publicarLote(
           }),
           "certificado.pdf",
         );
-        formulario.set("clave", registro[opciones.campoClave] ?? "");
-        formulario.set("nombre", registro[opciones.campoNombre] ?? "");
+        formulario.set("clave", clave ?? registro[opciones.campoClave] ?? "");
+        formulario.set(
+          "nombre",
+          nombre ?? registro[opciones.campoNombre] ?? "",
+        );
         formulario.set("tipo", tipo);
+        if (plantilla) formulario.set("plantilla", plantilla);
         formulario.set("datos", JSON.stringify(registro));
 
         const respuesta = await fetch("/api/admin/certificados", {
