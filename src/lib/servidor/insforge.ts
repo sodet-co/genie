@@ -20,18 +20,8 @@ export function clienteAdmin() {
   });
 }
 
-// Solo los correos de ADMIN_EMAILS pueden entrar al panel. Si la variable está
-// vacía nadie entra: así una cuenta creada por registro público no basta.
-export function esCorreoAdmin(correo: string | null | undefined) {
-  if (!correo) return false;
-  const permitidos = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((c) => c.trim().toLowerCase())
-    .filter(Boolean);
-  return permitidos.includes(correo.trim().toLowerCase());
-}
-
-// Devuelve el usuario si la sesión (cookie) es válida y pertenece a un admin.
+// Devuelve el usuario si la sesión (cookie) es válida. Todo usuario de InsForge
+// es admin: el registro público está desactivado y las cuentas se crean a mano.
 // La validación la hace InsForge, no solo la presencia de la cookie.
 export async function usuarioAdmin() {
   // cookies() queda fuera del try: durante el prerender rechaza a propósito y
@@ -41,7 +31,7 @@ export async function usuarioAdmin() {
     const cliente = createServerClient({ cookies: almacen });
     const { data } = await cliente.auth.getCurrentUser();
     const usuario = data.user;
-    return usuario && esCorreoAdmin(usuario.email) ? usuario : null;
+    return usuario ?? null;
   } catch (error) {
     console.error(error);
     return null;
