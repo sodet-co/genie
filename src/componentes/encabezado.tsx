@@ -13,7 +13,13 @@ export function Encabezado({
         <Link href="/" className="shrink-0">
           <picture>
             <source srcSet="/marca/genie-lockup-white.svg" media="(prefers-color-scheme: dark)" />
-            <img src="/marca/genie-lockup.svg" alt="Genie" width={89} height={28} />
+            <img
+              src="/marca/genie-lockup.svg"
+              alt="Genie"
+              width={89}
+              height={28}
+              className="h-6 w-auto sm:h-7"
+            />
           </picture>
         </Link>
         <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />

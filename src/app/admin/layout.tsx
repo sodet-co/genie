@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { UsuarioActual } from "@/componentes/admin/usuario-actual";
 import { Encabezado } from "@/componentes/encabezado";
 import { usuarioAdmin } from "@/lib/servidor/insforge";
 import { cerrarSesion } from "../ingresar/acciones";
@@ -13,14 +14,17 @@ export default function LayoutAdmin({ children }: LayoutProps<"/admin">) {
     <>
       <Encabezado seccion="Administración">
         <nav className="flex items-center gap-1 text-small sm:gap-3">
-          <Link href="/admin" className="enlace px-2 py-1">
+          <Link href="/admin" className="enlace px-1.5 py-1 sm:px-2">
             Certificados
           </Link>
-          <Link href="/admin/plantillas" className="enlace px-2 py-1">
+          <Link href="/admin/plantillas" className="enlace px-1.5 py-1 sm:px-2">
             Plantillas
           </Link>
         </nav>
         <span aria-hidden className="h-5 w-px bg-border" />
+        <Suspense fallback={<span className="size-7 rounded-full bg-surface-sunken" />}>
+          <UsuarioActual />
+        </Suspense>
         <form action={cerrarSesion}>
           <button
             type="submit"

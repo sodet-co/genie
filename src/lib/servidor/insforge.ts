@@ -1,6 +1,7 @@
 import { createAdminClient } from "@insforge/sdk";
 import { createServerClient } from "@insforge/sdk/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export const TABLA = "certificados";
 export const BUCKET = "certificados";
@@ -23,7 +24,9 @@ export function clienteAdmin() {
 // Devuelve el usuario si la sesión (cookie) es válida. Todo usuario de InsForge
 // es admin: el registro público está desactivado y las cuentas se crean a mano.
 // La validación la hace InsForge, no solo la presencia de la cookie.
-export async function usuarioAdmin() {
+// Con cache(): una sola consulta a InsForge por petición, aunque la usen el
+// encabezado y la página.
+export const usuarioAdmin = cache(async () => {
   // cookies() queda fuera del try: durante el prerender rechaza a propósito y
   // Next debe ver ese rechazo.
   const almacen = await cookies();
@@ -36,7 +39,7 @@ export async function usuarioAdmin() {
     console.error(error);
     return null;
   }
-}
+});
 
 export type FilaCertificado = {
   id: string;
