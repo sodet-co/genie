@@ -4,8 +4,8 @@ import { FormularioDescarga } from "@/componentes/portal/formulario-descarga";
 import type { Organizacion } from "@/lib/organizaciones";
 import { MarcoUA, TITULO_UA } from "./marco-ua";
 
-// Portal de la Universidad del Atlántico: solo la tarjeta de descarga sobre el
-// fondo con las ilustraciones del certificado.
+// Portal de la Universidad del Atlántico: la tarjeta de descarga sobre el
+// fondo beige del certificado.
 export function PortalUA({ org }: { org: Organizacion }) {
   return (
     <MarcoUA
