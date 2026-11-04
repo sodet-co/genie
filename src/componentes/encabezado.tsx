@@ -16,8 +16,8 @@ export function Encabezado({
             <img src="/marca/genie-lockup.svg" alt="Genie" width={89} height={28} />
           </picture>
         </Link>
-        <span aria-hidden className="h-5 w-px bg-border" />
-        <span className="truncate font-medium text-ink-muted">{seccion}</span>
+        <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />
+        <span className="hidden truncate font-medium text-ink-muted sm:block">{seccion}</span>
         <div className="ml-auto flex items-center gap-2 sm:gap-4">{children}</div>
       </div>
     </header>

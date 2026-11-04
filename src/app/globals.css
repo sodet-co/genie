@@ -117,23 +117,23 @@
 
 @layer components {
   .campo {
-    @apply h-9 w-full min-w-0 rounded-md border border-border-strong bg-surface-raised px-3 text-body text-ink disabled:cursor-not-allowed disabled:bg-surface-sunken;
+    @apply h-11 w-full min-w-0 rounded-md border border-border-strong bg-surface-raised px-3 text-[16px] text-ink sm:h-9 sm:text-body disabled:cursor-not-allowed disabled:bg-surface-sunken;
   }
 
   .boton-primario {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-brand px-3.5 text-body font-medium text-on-brand hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand sm:h-9 px-3.5 text-body font-medium text-on-brand hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .boton-secundario {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-3.5 text-body font-medium text-ink hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-3.5 text-body font-medium text-ink sm:h-9 hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .boton-peligro {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-3.5 text-body font-medium text-danger hover:border-danger hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-raised px-3.5 text-body font-medium text-danger sm:h-9 hover:border-danger hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .archivo {
-    @apply w-full max-w-full min-w-0 text-body text-ink-muted file:mr-3 file:h-9 file:cursor-pointer file:rounded-md file:border file:border-border-strong file:bg-surface-raised file:px-3.5 file:text-body file:font-medium file:text-ink hover:file:bg-surface-sunken;
+    @apply w-full max-w-full min-w-0 text-body text-ink-muted file:mr-3 file:h-11 sm:file:h-9 file:cursor-pointer file:rounded-md file:border file:border-border-strong file:bg-surface-raised file:px-3.5 file:text-body file:font-medium file:text-ink hover:file:bg-surface-sunken;
   }
 
   .enlace {

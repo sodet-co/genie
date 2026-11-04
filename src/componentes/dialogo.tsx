@@ -10,7 +10,7 @@ export function Dialogo({
   onCerrar,
   titulo,
   descripcion,
-  ancho = "max-w-5xl",
+  ancho = "sm:max-w-5xl",
   bloquearCierre = false,
   children,
 }: {
@@ -38,7 +38,7 @@ export function Dialogo({
         e.preventDefault();
         if (!bloquearCierre) onCerrar();
       }}
-      className={`m-auto max-h-[92vh] w-[calc(100%-2rem)] ${ancho} flex-col overflow-hidden rounded-lg border border-border bg-surface-raised p-0 text-ink shadow-pop open:flex backdrop:bg-black/50`}
+      className={`m-0 h-dvh max-h-none w-full max-w-none flex-col overflow-hidden bg-surface-raised p-0 text-ink open:flex backdrop:bg-black/50 sm:m-auto sm:h-auto sm:max-h-[92vh] sm:w-[calc(100%-2rem)] sm:rounded-lg sm:border sm:border-border sm:shadow-pop ${ancho}`}
     >
       <header className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
         <div className="min-w-0">
@@ -50,7 +50,7 @@ export function Dialogo({
           onClick={onCerrar}
           disabled={bloquearCierre}
           aria-label="Cerrar"
-          className="-mr-1 rounded-md p-1 text-ink-muted hover:bg-surface-sunken hover:text-ink disabled:opacity-40"
+          className="-mr-2 rounded-md p-2 text-ink-muted hover:bg-surface-sunken hover:text-ink disabled:opacity-40"
         >
           <X aria-hidden size={20} strokeWidth={1.75} />
         </button>

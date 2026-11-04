@@ -4,7 +4,15 @@ import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function BotonEliminar({ id, nombre }: { id: string; nombre: string }) {
+export function BotonEliminar({
+  id,
+  nombre,
+  comoBoton = false,
+}: {
+  id: string;
+  nombre: string;
+  comoBoton?: boolean;
+}) {
   const router = useRouter();
   const [eliminando, setEliminando] = useState(false);
 
@@ -25,7 +33,7 @@ export function BotonEliminar({ id, nombre }: { id: string; nombre: string }) {
       type="button"
       onClick={eliminar}
       disabled={eliminando}
-      className="enlace inline-flex items-center gap-1 text-danger"
+      className={comoBoton ? "boton-peligro flex-1" : "enlace inline-flex items-center gap-1 text-danger"}
     >
       <Trash2 aria-hidden size={16} strokeWidth={1.75} />
       Eliminar

@@ -24,7 +24,7 @@ export function BotonGenerar() {
           setMontado(true);
           setAbierto(true);
         }}
-        className="boton-primario"
+        className="boton-primario w-full sm:w-auto"
       >
         <Plus aria-hidden size={16} strokeWidth={1.75} />
         Generar certificados
