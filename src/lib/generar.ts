@@ -1,4 +1,5 @@
 import { normalizarBusqueda } from "./busqueda";
+import { separarFondo, type Capas } from "./capas";
 import { crearPdf, crearPdfConFondo, descargar, Renderizador } from "./pdf";
 import type { TipoCertificado } from "./tipos";
 import {
@@ -18,6 +19,41 @@ type Opciones = {
 export class Cancelado extends Error {}
 export class SesionVencida extends Error {}
 
+// Separa el fondo una sola vez por plantilla (cada lote puede usar varias).
+function separadorConCache(pagina: Pagina) {
+  const cache = new Map<string, Promise<Capas | null>>();
+  return (html: string) => {
+    let capas = cache.get(html);
+    if (!capas) {
+      capas = separarFondo(html, pagina);
+      cache.set(html, capas);
+    }
+    return capas;
+  };
+}
+
+// Con fondo detectado: fondo directo en el PDF + capa transparente de texto
+// (el fondo sale siempre, en cualquier navegador). Sin él: página completa.
+async function generarPdf(
+  renderizador: Renderizador,
+  html: string,
+  capas: Capas | null,
+  registro: Registro,
+  pagina: Pagina,
+) {
+  if (capas) {
+    const texto = await renderizador.renderizar(
+      rellenar(capas.html, registro),
+      true,
+    );
+    return crearPdfConFondo(capas.fondoJpg, texto, pagina);
+  }
+  return crearPdf(
+    [await renderizador.renderizar(rellenar(html, registro))],
+    pagina,
+  );
+}
+
 // Descarga local de un solo PDF, para revisarlo antes de publicar.
 export async function generarIndividual(
   registro: Registro,
@@ -25,10 +61,14 @@ export async function generarIndividual(
 ) {
   const renderizador = new Renderizador(opciones.pagina);
   try {
-    const imagen = await renderizador.renderizar(
-      rellenar(opciones.html, registro),
+    const capas = await separarFondo(opciones.html, opciones.pagina);
+    const pdf = await generarPdf(
+      renderizador,
+      opciones.html,
+      capas,
+      registro,
+      opciones.pagina,
     );
-    const pdf = await crearPdf([imagen], opciones.pagina);
     const nombre = registro[opciones.campoNombre]?.trim();
     descargar(
       pdf,
@@ -81,8 +121,6 @@ export type ItemPublicacion = {
   // Plantilla ya preparada (cada fila puede usar una distinta).
   html: string;
   tipo: TipoCertificado;
-  // Si viene, `html` es solo la capa de texto y el fondo se pone aparte.
-  fondoJpg?: Uint8Array;
 };
 
 // Genera cada PDF en el navegador y lo sube al servidor, que lo guarda y lo
@@ -104,22 +142,19 @@ export async function publicarLote(
     fallidos: [],
   };
   const renderizador = new Renderizador(opciones.pagina);
+  const capasDe = separadorConCache(opciones.pagina);
   try {
     for (let i = 0; i < items.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const { registro, html, tipo, fila, fondoJpg } = items[i];
+      const { registro, html, tipo, fila } = items[i];
       try {
-        const pdf = fondoJpg
-          ? await crearPdfConFondo(
-              fondoJpg,
-              await renderizador.renderizar(rellenar(html, registro), true),
-              opciones.pagina,
-            )
-          : await crearPdf(
-              [await renderizador.renderizar(rellenar(html, registro))],
-              opciones.pagina,
-            );
-
+        const pdf = await generarPdf(
+          renderizador,
+          html,
+          await capasDe(html),
+          registro,
+          opciones.pagina,
+        );
         const formulario = new FormData();
         formulario.set(
           "archivo",

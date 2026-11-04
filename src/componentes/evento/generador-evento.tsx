@@ -557,9 +557,7 @@ function Publicar({
         return {
           fila: i + 1,
           registro: { nombre: p.nombre, titulo: p.titulo },
-          // Fondo aparte + capa de texto: el fondo sale siempre en el PDF.
-          html: plantilla.capa?.html ?? plantilla.html,
-          fondoJpg: plantilla.capa?.fondoJpg,
+          html: plantilla.html,
           tipo,
         };
       });

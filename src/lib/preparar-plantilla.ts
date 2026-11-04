@@ -4,8 +4,6 @@ import {
   incrustarRecursos,
   leerComoDataUrl,
 } from "./plantilla";
-import { imagenAJpeg } from "./pdf";
-import { medidasPagina } from "./plantilla";
 import { urlFondo, urlHtml, type PlantillaEvento } from "./plantillas-evento";
 
 export type Plantilla = {
@@ -16,9 +14,6 @@ export type Plantilla = {
   faltantes: string[];
   // Hojas de estilo externas (ej. Google Fonts) que no se pudieron descargar.
   externosFallidos: string[];
-  // Solo en las plantillas del evento: el fondo ya listo para el PDF y el HTML
-  // sin fondo (capa de texto). La vista previa sigue usando `html`.
-  capa?: { html: string; fondoJpg: Uint8Array };
 };
 
 // Deja la plantilla autocontenida: imágenes, fuentes y CSS externo embebidos,
@@ -57,19 +52,7 @@ export async function cargarPlantillaEvento(
       return r.blob();
     }),
   ]);
-  const [plantilla, fondoJpg] = await Promise.all([
-    prepararPlantilla(html, `${p.id}.html`, [
-      { nombre: `${p.id}.png`, datos: fondo },
-    ]),
-    imagenAJpeg(fondo, medidasPagina("carta", "horizontal")),
+  return prepararPlantilla(html, `${p.id}.html`, [
+    { nombre: `${p.id}.png`, datos: fondo },
   ]);
-  return { ...plantilla, capa: { html: sinFondo(plantilla.html), fondoJpg } };
-}
-
-// La capa de texto: misma plantilla con el fondo de html/body transparente.
-function sinFondo(html: string) {
-  const css = "<style>html,body{background:transparent!important}</style>";
-  return html.includes("</head>")
-    ? html.replace("</head>", `${css}</head>`)
-    : css + html;
 }

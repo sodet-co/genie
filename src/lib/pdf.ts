@@ -104,8 +104,8 @@ export async function crearPdfConFondo(
 
 // Reduce una imagen (p. ej. el PNG de 4538 px del diseño) a la resolución de
 // impresión de la página y la devuelve como JPEG.
-export async function imagenAJpeg(datos: Blob, pagina: Pagina) {
-  const bitmap = await createImageBitmap(datos);
+export async function imagenAJpeg(datos: Blob | ImageBitmap, pagina: Pagina) {
+  const bitmap = datos instanceof Blob ? await createImageBitmap(datos) : datos;
   const lienzo = document.createElement("canvas");
   lienzo.width = Math.round(pagina.anchoPx * ESCALA);
   lienzo.height = Math.round(pagina.altoPx * ESCALA);
