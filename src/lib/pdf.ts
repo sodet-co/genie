@@ -1,4 +1,4 @@
-import { domToJpeg } from "modern-screenshot";
+import { domToJpeg, domToPng } from "modern-screenshot";
 import { PDFDocument } from "pdf-lib";
 import type { Pagina } from "./plantilla";
 
@@ -28,7 +28,9 @@ export class Renderizador {
     document.body.appendChild(this.iframe);
   }
 
-  async renderizar(html: string): Promise<Uint8Array> {
+  // Con `transparente` devuelve un PNG con fondo transparente (solo la capa de
+  // texto); si no, un JPEG de la página completa.
+  async renderizar(html: string, transparente = false): Promise<Uint8Array> {
     await new Promise<void>((resolve) => {
       this.iframe.onload = () => resolve();
       this.iframe.srcdoc = html;
@@ -41,13 +43,18 @@ export class Renderizador {
       Array.from(doc.images).map((img) => img.decode().catch(() => undefined)),
     );
 
-    const dataUrl = await domToJpeg(doc.documentElement, {
+    const medidas = {
       width: this.pagina.anchoPx,
       height: this.pagina.altoPx,
       scale: ESCALA,
-      quality: CALIDAD_JPEG,
-      backgroundColor: "#ffffff",
-    });
+    };
+    const dataUrl = transparente
+      ? await domToPng(doc.documentElement, medidas)
+      : await domToJpeg(doc.documentElement, {
+          ...medidas,
+          quality: CALIDAD_JPEG,
+          backgroundColor: "#ffffff",
+        });
     return dataUrlABytes(dataUrl);
   }
 
@@ -79,7 +86,50 @@ export async function crearPdf(imagenes: Uint8Array[], pagina: Pagina) {
   return pdf.save();
 }
 
-export function descargar(datos: Uint8Array | Blob, nombre: string, tipo: string) {
+// Fondo (JPEG) y encima la capa de texto (PNG transparente), a página completa.
+// El fondo no pasa por la captura del HTML: así sale siempre, en cualquier
+// navegador.
+export async function crearPdfConFondo(
+  fondoJpg: Uint8Array,
+  capaPng: Uint8Array,
+  pagina: Pagina,
+) {
+  const pdf = await PDFDocument.create();
+  const hoja = pdf.addPage([pagina.anchoPt, pagina.altoPt]);
+  const caja = { x: 0, y: 0, width: pagina.anchoPt, height: pagina.altoPt };
+  hoja.drawImage(await pdf.embedJpg(fondoJpg), caja);
+  hoja.drawImage(await pdf.embedPng(capaPng), caja);
+  return pdf.save();
+}
+
+// Reduce una imagen (p. ej. el PNG de 4538 px del diseño) a la resolución de
+// impresión de la página y la devuelve como JPEG.
+export async function imagenAJpeg(datos: Blob, pagina: Pagina) {
+  const bitmap = await createImageBitmap(datos);
+  const lienzo = document.createElement("canvas");
+  lienzo.width = Math.round(pagina.anchoPx * ESCALA);
+  lienzo.height = Math.round(pagina.altoPx * ESCALA);
+  const ctx = lienzo.getContext("2d");
+  if (!ctx) throw new Error("No se pudo preparar el fondo.");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, lienzo.width, lienzo.height);
+  bitmap.close();
+  const jpeg = await new Promise<Blob>((resolve, reject) =>
+    lienzo.toBlob(
+      (b) =>
+        b ? resolve(b) : reject(new Error("No se pudo preparar el fondo.")),
+      "image/jpeg",
+      CALIDAD_JPEG,
+    ),
+  );
+  return new Uint8Array(await jpeg.arrayBuffer());
+}
+
+export function descargar(
+  datos: Uint8Array | Blob,
+  nombre: string,
+  tipo: string,
+) {
   const blob =
     datos instanceof Blob
       ? datos

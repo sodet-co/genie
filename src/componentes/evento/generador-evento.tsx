@@ -553,10 +553,13 @@ function Publicar({
     try {
       const items = personas.map((p, i) => {
         const tipo = p.tipo as TipoCertificado;
+        const plantilla = plantillas[tipo]!;
         return {
           fila: i + 1,
           registro: { nombre: p.nombre, titulo: p.titulo },
-          html: plantillas[tipo]!.html,
+          // Fondo aparte + capa de texto: el fondo sale siempre en el PDF.
+          html: plantilla.capa?.html ?? plantilla.html,
+          fondoJpg: plantilla.capa?.fondoJpg,
           tipo,
         };
       });

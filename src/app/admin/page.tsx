@@ -23,9 +23,11 @@ type Fila = Pick<
   | "actualizado_en"
 >;
 
+// El servidor (Vercel) corre en UTC: la hora se muestra en la de Colombia.
 const fecha = new Intl.DateTimeFormat("es-CO", {
   dateStyle: "medium",
   timeStyle: "short",
+  timeZone: "America/Bogota",
 });
 
 export default async function Certificados({

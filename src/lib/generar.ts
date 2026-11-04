@@ -1,5 +1,5 @@
 import { normalizarBusqueda } from "./busqueda";
-import { crearPdf, descargar, Renderizador } from "./pdf";
+import { crearPdf, crearPdfConFondo, descargar, Renderizador } from "./pdf";
 import type { TipoCertificado } from "./tipos";
 import {
   nombreSeguro,
@@ -81,6 +81,8 @@ export type ItemPublicacion = {
   // Plantilla ya preparada (cada fila puede usar una distinta).
   html: string;
   tipo: TipoCertificado;
+  // Si viene, `html` es solo la capa de texto y el fondo se pone aparte.
+  fondoJpg?: Uint8Array;
 };
 
 // Genera cada PDF en el navegador y lo sube al servidor, que lo guarda y lo
@@ -105,10 +107,18 @@ export async function publicarLote(
   try {
     for (let i = 0; i < items.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const { registro, html, tipo, fila } = items[i];
+      const { registro, html, tipo, fila, fondoJpg } = items[i];
       try {
-        const imagen = await renderizador.renderizar(rellenar(html, registro));
-        const pdf = await crearPdf([imagen], opciones.pagina);
+        const pdf = fondoJpg
+          ? await crearPdfConFondo(
+              fondoJpg,
+              await renderizador.renderizar(rellenar(html, registro), true),
+              opciones.pagina,
+            )
+          : await crearPdf(
+              [await renderizador.renderizar(rellenar(html, registro))],
+              opciones.pagina,
+            );
 
         const formulario = new FormData();
         formulario.set(
