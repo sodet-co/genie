@@ -194,13 +194,14 @@ export default async function Certificados({
                       {fecha.format(new Date(f.actualizado_en))}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-right">
-                      <div className="flex justify-end gap-3">
+                      <div className="flex justify-end gap-1">
                         <a
                           href={`/api/admin/certificados/${f.id}`}
-                          className="enlace inline-flex items-center gap-1"
+                          aria-label="Descargar PDF"
+                          data-tooltip="Descargar PDF"
+                          className="boton-icono con-tooltip"
                         >
                           <Download aria-hidden size={16} strokeWidth={1.75} />
-                          PDF
                         </a>
                         {f.plantilla && <BotonRegenerar certificado={f} />}
                         <BotonEliminar id={f.id} nombre={f.nombre} />

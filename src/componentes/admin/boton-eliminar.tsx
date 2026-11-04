@@ -33,10 +33,12 @@ export function BotonEliminar({
       type="button"
       onClick={eliminar}
       disabled={eliminando}
-      className={comoBoton ? "boton-peligro flex-1" : "enlace inline-flex items-center gap-1 text-danger"}
+      aria-label={comoBoton ? undefined : "Eliminar"}
+      data-tooltip={comoBoton ? undefined : "Eliminar"}
+      className={comoBoton ? "boton-peligro flex-1" : "boton-icono con-tooltip tooltip-fin hover:text-danger"}
     >
       <Trash2 aria-hidden size={16} strokeWidth={1.75} />
-      Eliminar
+      {comoBoton && "Eliminar"}
     </button>
   );
 }

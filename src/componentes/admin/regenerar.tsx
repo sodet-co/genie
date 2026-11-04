@@ -63,10 +63,12 @@ export function BotonRegenerar({
       type="button"
       onClick={alHacerClic}
       disabled={estado === "trabajando"}
+      aria-label={comoBoton ? undefined : texto}
+      data-tooltip={comoBoton ? undefined : texto}
       className={
         comoBoton
           ? "boton-secundario flex-1"
-          : `enlace inline-flex items-center gap-1 ${estado === "error" ? "text-danger" : ""}`
+          : `boton-icono con-tooltip ${estado === "error" ? "text-danger" : estado === "ok" ? "text-brand" : ""}`
       }
     >
       <Icono
@@ -75,7 +77,7 @@ export function BotonRegenerar({
         strokeWidth={1.75}
         className={estado === "trabajando" ? "animate-spin" : undefined}
       />
-      {texto}
+      {comoBoton && texto}
     </button>
   );
 }

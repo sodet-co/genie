@@ -136,6 +136,28 @@
     @apply w-full max-w-full min-w-0 text-body text-ink-muted file:mr-3 file:h-11 sm:file:h-9 file:cursor-pointer file:rounded-md file:border file:border-border-strong file:bg-surface-raised file:px-3.5 file:text-body file:font-medium file:text-ink hover:file:bg-surface-sunken;
   }
 
+  /* Botón solo con ícono (acciones de las tablas). */
+  .boton-icono {
+    @apply inline-flex size-8 items-center justify-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Tooltip inmediato con el texto de data-tooltip (hover y foco de teclado). */
+  .con-tooltip {
+    @apply relative;
+  }
+  .con-tooltip::after {
+    content: attr(data-tooltip);
+    @apply pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-sm bg-ink px-2 py-1 text-label font-medium normal-case tracking-normal text-surface-raised opacity-0 shadow-pop transition-opacity;
+  }
+  /* Para el último botón de una fila: el tooltip no se sale por la derecha. */
+  .con-tooltip.tooltip-fin::after {
+    @apply right-0 left-auto translate-x-0;
+  }
+  .con-tooltip:hover::after,
+  .con-tooltip:focus-visible::after {
+    @apply opacity-100;
+  }
+
   .enlace {
     @apply cursor-pointer font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50;
   }
