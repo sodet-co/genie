@@ -31,17 +31,18 @@ export function MarcoUA({
 }) {
   return (
     <div className={`${serif.variable} flex flex-1 flex-col`}>
-      <header className="bg-brand text-on-brand">
+      {/* Mismo estilo del pie: fondo claro y borde fino. */}
+      <header className="border-b border-border bg-surface-raised">
+        <div aria-hidden className="franja" />
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
           <Link
             href={`/${org.slug}`}
-            className="truncate font-[family-name:var(--font-serif-ua)] text-[19px] font-bold sm:text-[22px]"
+            className="truncate font-[family-name:var(--font-serif-ua)] text-[19px] font-bold text-ink sm:text-[22px]"
           >
             {org.nombre}
           </Link>
           {accion}
         </div>
-        <div aria-hidden className="franja" />
       </header>
 
       <main className="relative isolate flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#f4efe0] px-4 py-12 sm:px-6 sm:py-16">

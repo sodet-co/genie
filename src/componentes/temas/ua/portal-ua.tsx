@@ -13,7 +13,7 @@ export function PortalUA({ org }: { org: Organizacion }) {
       accion={
         <Link
           href={`/${org.slug}/ingresar`}
-          className="inline-flex shrink-0 items-center gap-1.5 text-small font-medium text-on-brand hover:underline"
+          className="enlace inline-flex shrink-0 items-center gap-1.5 text-small"
         >
           <LogIn aria-hidden size={16} strokeWidth={1.75} />
           Ingresar
