@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
-import { PieSodet } from "@/componentes/pie-sodet";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -16,9 +15,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Generador de certificados · Genie",
+  title: "Genie · Certificados para instituciones",
   description:
-    "Genera certificados en PDF a partir de una plantilla HTML, a mano o desde Excel.",
+    "Genera, publica y entrega certificados de participación: carga masiva desde Excel, plantillas con la identidad de tu institución y un portal de descarga para los participantes.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-surface font-sans text-body text-ink">
         {children}
-        <PieSodet />
       </body>
     </html>
   );

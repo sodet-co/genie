@@ -4,7 +4,7 @@ import {
   incrustarRecursos,
   leerComoDataUrl,
 } from "./plantilla";
-import { urlFondo, urlHtml, type PlantillaEvento } from "./plantillas-evento";
+import type { PlantillaEvento } from "./organizaciones";
 
 export type Plantilla = {
   nombreArchivo: string;
@@ -43,12 +43,12 @@ export async function cargarPlantillaEvento(
   p: PlantillaEvento,
 ): Promise<Plantilla> {
   const [html, fondo] = await Promise.all([
-    fetch(urlHtml(p)).then((r) => {
-      if (!r.ok) throw new Error(`No se encontró ${urlHtml(p)}`);
+    fetch(p.html).then((r) => {
+      if (!r.ok) throw new Error(`No se encontró ${p.html}`);
       return r.text();
     }),
-    fetch(urlFondo(p)).then((r) => {
-      if (!r.ok) throw new Error(`No se encontró ${urlFondo(p)}`);
+    fetch(p.fondo).then((r) => {
+      if (!r.ok) throw new Error(`No se encontró ${p.fondo}`);
       return r.blob();
     }),
   ]);

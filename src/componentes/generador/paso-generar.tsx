@@ -11,6 +11,7 @@ import {
 } from "@/lib/generar";
 import type { Pagina, Registro } from "@/lib/plantilla";
 import { etiquetaTipo, TIPOS, type TipoCertificado } from "@/lib/tipos";
+import { useOrganizacion } from "@/componentes/organizacion";
 import { Mensaje } from "./mensaje";
 import { ListaProblemas, ResumenPublicacion } from "./resultado-publicacion";
 
@@ -37,6 +38,7 @@ export function PasoGenerar(props: Props) {
   const [resultado, setResultado] = useState<ResultadoPublicacion | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cancelado = useRef(false);
+  const org = useOrganizacion();
 
   const problemas = revisarClaves(registros, props.campoClave);
 
@@ -58,6 +60,7 @@ export function PasoGenerar(props: Props) {
             tipo,
           })),
           {
+            organizacion: org.slug,
             pagina: props.pagina,
             campoClave: props.campoClave,
             campoNombre: props.campoNombre,

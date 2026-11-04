@@ -1,5 +1,5 @@
 import { LARGO_MAXIMO_CLAVE, normalizarBusqueda } from "@/lib/busqueda";
-import { PLANTILLAS_EVENTO } from "@/lib/plantillas-evento";
+import { buscarOrganizacion, plantillaPorId } from "@/lib/organizaciones";
 import { esTipo } from "@/lib/tipos";
 import {
   BUCKET,
@@ -16,8 +16,13 @@ function error(estado: number, mensaje: string) {
 
 // Publica (o reemplaza) el PDF de una persona. Lo llama el generador del panel
 // después de crear cada PDF en el navegador.
-export async function POST(request: Request) {
-  if (!(await usuarioAdmin()))
+export async function POST(
+  request: Request,
+  ctx: RouteContext<"/api/[org]/admin/certificados">,
+) {
+  const org = buscarOrganizacion((await ctx.params).org);
+  if (!org) return error(404, "Organización no encontrada.");
+  if (!(await usuarioAdmin(org.slug)))
     return error(401, "Sesión vencida. Vuelve a ingresar.");
 
   const formulario = await request.formData();
@@ -28,9 +33,7 @@ export async function POST(request: Request) {
   const tipo = formulario.get("tipo");
   const idPlantilla = formulario.get("plantilla");
   // Solo se guardan plantillas del evento conocidas (las que se pueden regenerar).
-  const plantilla = PLANTILLAS_EVENTO.some((p) => p.id === idPlantilla)
-    ? String(idPlantilla)
-    : null;
+  const plantilla = plantillaPorId(org, String(idPlantilla ?? ""))?.id ?? null;
 
   if (!(archivo instanceof Blob)) return error(400, "Falta el PDF.");
   if (!esTipo(tipo)) return error(400, "Tipo de certificado inválido.");
@@ -55,6 +58,7 @@ export async function POST(request: Request) {
   const { data: existente, error: errorConsulta } = await db.database
     .from(TABLA)
     .select("id, archivo_key, tipo")
+    .eq("organizacion", org.slug)
     .eq("clave", clave)
     .maybeSingle();
   if (errorConsulta) {
@@ -62,7 +66,9 @@ export async function POST(request: Request) {
     return error(500, "No se pudo consultar la base de datos.");
   }
 
-  const archivoKey = existente?.archivo_key ?? `${crypto.randomUUID()}.pdf`;
+  // Los PDF nuevos van en una carpeta por organización.
+  const archivoKey =
+    existente?.archivo_key ?? `${org.slug}/${crypto.randomUUID()}.pdf`;
   const { error: errorSubida } = await db.storage
     .from(BUCKET)
     .upload(archivoKey, new Blob([bytes], { type: "application/pdf" }));
@@ -72,6 +78,7 @@ export async function POST(request: Request) {
   }
 
   const fila = {
+    organizacion: org.slug,
     clave,
     clave_original: claveOriginal,
     nombre,

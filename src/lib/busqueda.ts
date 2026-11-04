@@ -12,7 +12,3 @@ export function normalizarBusqueda(texto: string) {
 
 export const LARGO_MAXIMO_CLAVE = 200;
 
-export const ETIQUETA_BUSQUEDA =
-  process.env.NEXT_PUBLIC_ETIQUETA_BUSQUEDA?.trim() || "Nombre completo";
-
-export const NOMBRE_EVENTO = process.env.NEXT_PUBLIC_NOMBRE_EVENTO?.trim() || "";

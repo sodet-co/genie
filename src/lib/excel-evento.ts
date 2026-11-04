@@ -2,7 +2,7 @@ import * as XLSX from "xlsx";
 import { normalizarBusqueda } from "./busqueda";
 import { decodificarTexto } from "./excel";
 import { normalizarClave } from "./plantilla";
-import { buscarPlantillaPorTipo } from "./plantillas-evento";
+import { plantillaPorTipo, type Organizacion } from "./organizaciones";
 import { TIPOS, type TipoCertificado } from "./tipos";
 
 export type PersonaEvento = {
@@ -65,7 +65,7 @@ export type ProblemaPersona = { fila: number; motivo: string };
 
 // Una persona = un certificado: nombre obligatorio y sin repetir, tipo de la
 // lista y título cuando la plantilla lo usa.
-export function revisarPersonas(personas: PersonaEvento[]) {
+export function revisarPersonas(personas: PersonaEvento[], org: Organizacion) {
   const problemas: ProblemaPersona[] = [];
   const vistos = new Map<string, number>();
   personas.forEach((p, i) => {
@@ -75,7 +75,9 @@ export function revisarPersonas(personas: PersonaEvento[]) {
     if (!clave) motivos.push("falta el nombre");
     if (!p.tipo) {
       motivos.push(p.tipoOriginal ? `el tipo "${p.tipoOriginal}" no es válido` : "falta el tipo");
-    } else if (buscarPlantillaPorTipo(p.tipo)?.marcadores.includes("titulo") && !p.titulo) {
+    } else if (!plantillaPorTipo(org, p.tipo)) {
+      motivos.push(`no hay plantilla de ${p.tipoOriginal.toLowerCase()}`);
+    } else if (plantillaPorTipo(org, p.tipo)?.marcadores.includes("titulo") && !p.titulo) {
       motivos.push("falta el título");
     }
     if (clave) {

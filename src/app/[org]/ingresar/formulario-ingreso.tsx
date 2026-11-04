@@ -3,10 +3,12 @@
 import { LogIn } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Mensaje } from "@/componentes/generador/mensaje";
+import { useOrganizacion } from "@/componentes/organizacion";
 import { iniciarSesion } from "./acciones";
 
 export function FormularioIngreso() {
   const [estado, accion, enviando] = useActionState(iniciarSesion, null);
+  const org = useOrganizacion();
   // Controlado: si la contraseña es incorrecta, el correo se conserva y solo
   // hay que volver a escribir la clave.
   const [correo, setCorreo] = useState("");
@@ -19,6 +21,7 @@ export function FormularioIngreso() {
 
   return (
     <form action={accion} className="mt-6 flex flex-col gap-4">
+      <input type="hidden" name="org" value={org.slug} />
       <label className="etiqueta">
         Correo
         <input

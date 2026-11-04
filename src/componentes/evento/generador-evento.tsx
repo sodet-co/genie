@@ -30,10 +30,8 @@ import {
   type ResultadoPublicacion,
 } from "@/lib/generar";
 import { medidasPagina } from "@/lib/plantilla";
-import {
-  buscarPlantillaPorTipo,
-  PLANTILLAS_EVENTO,
-} from "@/lib/plantillas-evento";
+import { useOrganizacion } from "@/componentes/organizacion";
+import { plantillaPorTipo, type Organizacion } from "@/lib/organizaciones";
 import {
   cargarPlantillaEvento,
   type Plantilla,
@@ -42,8 +40,8 @@ import { etiquetaTipo, TIPOS, type TipoCertificado } from "@/lib/tipos";
 
 const PAGINA = medidasPagina("carta", "horizontal");
 const FILAS_VISIBLES = 100;
-const usaTitulo = (tipo: TipoCertificado | "") =>
-  buscarPlantillaPorTipo(tipo)?.marcadores.includes("titulo") ?? false;
+const usaTitulo = (org: Organizacion, tipo: TipoCertificado | "") =>
+  plantillaPorTipo(org, tipo)?.marcadores.includes("titulo") ?? false;
 
 type Plantillas = Partial<Record<TipoCertificado, Plantilla>>;
 
@@ -55,6 +53,7 @@ export function GeneradorEvento({
 }: {
   onOcupado: (ocupado: boolean) => void;
 }) {
+  const org = useOrganizacion();
   const [plantillas, setPlantillas] = useState<Plantillas>({});
   const [errorPlantillas, setErrorPlantillas] = useState(false);
   const [personas, setPersonas] = useState<PersonaEvento[]>([]);
@@ -64,7 +63,7 @@ export function GeneradorEvento({
   useEffect(() => {
     let vigente = true;
     Promise.all(
-      PLANTILLAS_EVENTO.map(
+      org.evento.plantillas.map(
         async (p) => [p.tipo, await cargarPlantillaEvento(p)] as const,
       ),
     )
@@ -78,9 +77,9 @@ export function GeneradorEvento({
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [org]);
 
-  const problemas = useMemo(() => revisarPersonas(personas), [personas]);
+  const problemas = useMemo(() => revisarPersonas(personas, org), [personas, org]);
   const problemaPorFila = useMemo(
     () => new Map(problemas.map((p) => [p.fila, p.motivo])),
     [problemas],
@@ -177,6 +176,7 @@ function CargaExcel({
 }: {
   onImportar: (personas: PersonaEvento[]) => void;
 }) {
+  const org = useOrganizacion();
   const [mensaje, setMensaje] = useState<{
     tipo: "ok" | "error";
     texto: string;
@@ -219,7 +219,7 @@ function CargaExcel({
       </p>
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
         <a
-          href="/api/admin/modelo-excel"
+          href={`/api/${org.slug}/admin/modelo-excel`}
           className="boton-secundario self-start"
         >
           <Download aria-hidden size={16} strokeWidth={1.75} />
@@ -253,7 +253,8 @@ function FormularioPersona({
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoCertificado | "">("");
   const [titulo, setTitulo] = useState("");
-  const conTitulo = usaTitulo(tipo);
+  const org = useOrganizacion();
+  const conTitulo = usaTitulo(org, tipo);
 
   const persona = (): PersonaEvento => ({
     nombre: nombre.trim().replace(/\s+/g, " "),
@@ -291,9 +292,10 @@ function FormularioPersona({
             className="campo"
           >
             <option value="">Elige el tipo…</option>
-            {TIPOS.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.etiqueta}
+            {/* Solo los tipos con plantilla en esta organización. */}
+            {org.evento.plantillas.map((p) => (
+              <option key={p.tipo} value={p.tipo}>
+                {etiquetaTipo(p.tipo)}
               </option>
             ))}
           </select>
@@ -537,7 +539,8 @@ function Publicar({
   const [resultado, setResultado] = useState<ResultadoPublicacion | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cancelado = useRef(false);
-  const listas = PLANTILLAS_EVENTO.every((p) => plantillas[p.tipo]);
+  const org = useOrganizacion();
+  const listas = org.evento.plantillas.every((p) => plantillas[p.tipo]);
 
   function marcarOcupado(valor: boolean) {
     setOcupado(valor);
@@ -559,11 +562,12 @@ function Publicar({
           registro: { nombre: p.nombre, titulo: p.titulo },
           html: plantilla.html,
           tipo,
-          plantilla: buscarPlantillaPorTipo(tipo)?.id,
+          plantilla: plantillaPorTipo(org, tipo)?.id,
         };
       });
       setResultado(
         await publicarLote(items, {
+          organizacion: org.slug,
           pagina: PAGINA,
           campoClave: "nombre",
           campoNombre: "nombre",

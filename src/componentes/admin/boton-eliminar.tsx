@@ -3,6 +3,7 @@
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useOrganizacion } from "@/componentes/organizacion";
 
 export function BotonEliminar({
   id,
@@ -14,13 +15,16 @@ export function BotonEliminar({
   comoBoton?: boolean;
 }) {
   const router = useRouter();
+  const org = useOrganizacion();
   const [eliminando, setEliminando] = useState(false);
 
   async function eliminar() {
     if (!window.confirm(`¿Eliminar el certificado de ${nombre}? Ya no se podrá descargar.`)) return;
     setEliminando(true);
     try {
-      const respuesta = await fetch(`/api/admin/certificados/${id}`, { method: "DELETE" });
+      const respuesta = await fetch(`/api/${org.slug}/admin/certificados/${id}`, {
+        method: "DELETE",
+      });
       if (!respuesta.ok) window.alert("No se pudo eliminar el certificado.");
       router.refresh();
     } finally {

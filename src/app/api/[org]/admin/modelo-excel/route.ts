@@ -1,14 +1,16 @@
 import ExcelJS from "exceljs";
 import { usuarioAdmin } from "@/lib/servidor/insforge";
-import { EVENTO_ACTUAL } from "@/lib/plantillas-evento";
-import { TIPOS } from "@/lib/tipos";
+import { buscarOrganizacion } from "@/lib/organizaciones";
+import { etiquetaTipo } from "@/lib/tipos";
 
 const FILAS_CON_LISTA = 2000;
 
 // Excel modelo para la carga masiva del evento: la columna Tipo es una lista
 // desplegable con los tipos de certificado.
-export async function GET() {
-  if (!(await usuarioAdmin())) return new Response("No autorizado", { status: 401 });
+export async function GET(_: Request, ctx: RouteContext<"/api/[org]/admin/modelo-excel">) {
+  const org = buscarOrganizacion((await ctx.params).org);
+  if (!org) return new Response("No encontrado", { status: 404 });
+  if (!(await usuarioAdmin(org.slug))) return new Response("No autorizado", { status: 401 });
 
   const libro = new ExcelJS.Workbook();
   const hoja = libro.addWorksheet("Personas", { views: [{ state: "frozen", ySplit: 1 }] });
@@ -21,7 +23,9 @@ export async function GET() {
   encabezado.font = { bold: true, color: { argb: "FFFFFFFF" } };
   encabezado.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0B6B3A" } };
 
-  const lista = `"${TIPOS.map((t) => t.etiqueta).join(",")}"`;
+  // Solo los tipos para los que la organización tiene plantilla.
+  const etiquetas = org.evento.plantillas.map((p) => etiquetaTipo(p.tipo));
+  const lista = `"${etiquetas.join(",")}"`;
   for (let fila = 2; fila <= FILAS_CON_LISTA + 1; fila++) {
     hoja.getCell(`B${fila}`).dataValidation = {
       type: "list",
@@ -36,11 +40,11 @@ export async function GET() {
   const ayuda = libro.addWorksheet("Instrucciones");
   ayuda.getColumn(1).width = 100;
   [
-    EVENTO_ACTUAL.nombre,
+    `${org.nombre} · ${org.evento.nombre}`,
     "",
     "Una fila por persona. Cada persona recibe un solo certificado.",
     "Nombre: tal como debe salir en el certificado. Es también lo que la persona escribe para descargarlo.",
-    `Tipo: elígelo de la lista (${TIPOS.map((t) => t.etiqueta).join(", ")}).`,
+    `Tipo: elígelo de la lista (${etiquetas.join(", ")}).`,
     "Título: obligatorio para Ponente, Conferencista y Coordinador de mesa (título de la ponencia, conferencia o mesa). Vacío para Asistente.",
   ].forEach((texto, i) => {
     const celda = ayuda.getCell(`A${i + 1}`);

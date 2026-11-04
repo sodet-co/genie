@@ -7,7 +7,9 @@ import {
 } from "@/componentes/admin/regenerar";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { Mensaje } from "@/componentes/generador/mensaje";
+import { notFound } from "next/navigation";
 import { normalizarBusqueda } from "@/lib/busqueda";
+import { buscarOrganizacion } from "@/lib/organizaciones";
 import { esTipo, etiquetaTipo, TIPOS } from "@/lib/tipos";
 import {
   clienteAdmin,
@@ -38,8 +40,11 @@ const fecha = new Intl.DateTimeFormat("es-CO", {
 });
 
 export default async function Certificados({
+  params,
   searchParams,
-}: PageProps<"/admin">) {
+}: PageProps<"/[org]/admin">) {
+  const org = buscarOrganizacion((await params).org);
+  if (!org) notFound();
   const parametros = await searchParams;
   const q = String(parametros.q ?? "").trim();
   const tipo = esTipo(parametros.tipo) ? parametros.tipo : "";
@@ -53,6 +58,7 @@ export default async function Certificados({
         count: "exact",
       },
     )
+    .eq("organizacion", org.slug)
     .order("nombre")
     .range((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA - 1);
   // Comas, paréntesis y comodines romperían el filtro `or` de PostgREST.
@@ -146,7 +152,7 @@ export default async function Certificados({
                 </p>
                 <div className="flex gap-2">
                   <a
-                    href={`/api/admin/certificados/${f.id}`}
+                    href={`/api/${org.slug}/admin/certificados/${f.id}`}
                     className="boton-secundario flex-1"
                   >
                     <Download aria-hidden size={16} strokeWidth={1.75} />
@@ -212,7 +218,7 @@ export default async function Certificados({
                     <td className="whitespace-nowrap px-3 py-2.5 text-right">
                       <div className="flex justify-end gap-1">
                         <a
-                          href={`/api/admin/certificados/${f.id}`}
+                          href={`/api/${org.slug}/admin/certificados/${f.id}`}
                           aria-label="Descargar PDF"
                           data-tooltip="Descargar PDF"
                           className="boton-icono con-tooltip"

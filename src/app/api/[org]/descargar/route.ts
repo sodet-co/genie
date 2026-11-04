@@ -1,4 +1,5 @@
 import { LARGO_MAXIMO_CLAVE, normalizarBusqueda } from "@/lib/busqueda";
+import { buscarOrganizacion } from "@/lib/organizaciones";
 import { BUCKET, clienteAdmin, TABLA } from "@/lib/servidor/insforge";
 import { ipDe, permitir } from "@/lib/servidor/limite";
 import { etiquetaTipo } from "@/lib/tipos";
@@ -13,8 +14,11 @@ function error(estado: number, mensaje: string) {
 
 // Portal público: busca un certificado YA generado y lo devuelve. Nunca genera
 // uno nuevo. Si no existe, responde siempre el mismo mensaje genérico.
-export async function POST(request: Request) {
-  if (!permitir(`descarga:${ipDe(request)}`, 20, 10 * 60_000)) {
+// Solo busca dentro de la organización de la ruta (/api/ua/descargar).
+export async function POST(request: Request, ctx: RouteContext<"/api/[org]/descargar">) {
+  const org = buscarOrganizacion((await ctx.params).org);
+  if (!org) return error(404, NO_ENCONTRADO);
+  if (!permitir(`descarga:${org.slug}:${ipDe(request)}`, 20, 10 * 60_000)) {
     return error(429, "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.");
   }
 
@@ -32,6 +36,7 @@ export async function POST(request: Request) {
   const { data: fila, error: errorConsulta } = await db.database
     .from(TABLA)
     .select("id, nombre, tipo, archivo_key, descargas")
+    .eq("organizacion", org.slug)
     .eq("clave", clave)
     .maybeSingle();
   if (errorConsulta) {

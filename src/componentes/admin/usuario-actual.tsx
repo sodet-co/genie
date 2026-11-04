@@ -1,8 +1,8 @@
 import { usuarioAdmin } from "@/lib/servidor/insforge";
 
 // Nombre del perfil de InsForge (o el correo si no tiene) con su inicial.
-export async function UsuarioActual() {
-  const usuario = await usuarioAdmin();
+export async function UsuarioActual({ organizacion }: { organizacion: string }) {
+  const usuario = await usuarioAdmin(organizacion);
   if (!usuario) return null;
   const nombre = usuario.profile?.name?.trim() || usuario.email;
   return (

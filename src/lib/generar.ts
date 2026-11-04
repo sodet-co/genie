@@ -134,6 +134,7 @@ export type ItemPublicacion = {
 export async function publicarLote(
   items: ItemPublicacion[],
   opciones: {
+    organizacion: string;
     pagina: Pagina;
     campoClave: string;
     campoNombre: string;
@@ -178,7 +179,7 @@ export async function publicarLote(
         if (plantilla) formulario.set("plantilla", plantilla);
         formulario.set("datos", JSON.stringify(registro));
 
-        const respuesta = await fetch("/api/admin/certificados", {
+        const respuesta = await fetch(`/api/${opciones.organizacion}/admin/certificados`, {
           method: "POST",
           body: formulario,
         });

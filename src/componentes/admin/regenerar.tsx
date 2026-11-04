@@ -11,6 +11,7 @@ import {
   SesionVencida,
   type ResultadoPublicacion,
 } from "@/lib/generar";
+import { useOrganizacion } from "@/componentes/organizacion";
 import { regenerar, type CertificadoRegenerable } from "@/lib/regenerar";
 
 const ESPERA_MS = 4000;
@@ -24,6 +25,7 @@ export function BotonRegenerar({
   comoBoton?: boolean;
 }) {
   const router = useRouter();
+  const org = useOrganizacion();
   const [estado, setEstado] = useState<"listo" | "trabajando" | "ok" | "error">(
     "listo",
   );
@@ -41,7 +43,7 @@ export function BotonRegenerar({
     if (estado === "ok") return;
     setEstado("trabajando");
     try {
-      const r = await regenerar([certificado], {
+      const r = await regenerar(org, [certificado], {
         onProgreso: () => {},
         estaCancelado: () => false,
       });
@@ -98,6 +100,7 @@ export function BotonRegenerar({
 // Regenera en lote todos los certificados hechos con plantillas del evento.
 export function BotonRegenerarTodos() {
   const router = useRouter();
+  const org = useOrganizacion();
   const [abierto, setAbierto] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [total, setTotal] = useState(0);
@@ -113,7 +116,7 @@ export function BotonRegenerarTodos() {
     setError(null);
     setHechos(0);
     try {
-      const respuesta = await fetch("/api/admin/certificados/regenerables");
+      const respuesta = await fetch(`/api/${org.slug}/admin/certificados/regenerables`);
       if (respuesta.status === 401) throw new SesionVencida();
       if (!respuesta.ok) throw new Error(`error ${respuesta.status}`);
       const { certificados } = (await respuesta.json()) as {
@@ -121,7 +124,7 @@ export function BotonRegenerarTodos() {
       };
       setTotal(certificados.length);
       setResultado(
-        await regenerar(certificados, {
+        await regenerar(org, certificados, {
           onProgreso: setHechos,
           estaCancelado: () => cancelado.current,
         }),

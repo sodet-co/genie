@@ -3,6 +3,7 @@
 import { Download, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { Mensaje } from "@/componentes/generador/mensaje";
+import { useOrganizacion } from "@/componentes/organizacion";
 import { descargar } from "@/lib/pdf";
 
 function nombreDesdeCabecera(cabecera: string | null) {
@@ -18,6 +19,7 @@ function nombreDesdeCabecera(cabecera: string | null) {
 }
 
 export function FormularioDescarga({ etiqueta }: { etiqueta: string }) {
+  const org = useOrganizacion();
   const [clave, setClave] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [estado, setEstado] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
@@ -28,7 +30,7 @@ export function FormularioDescarga({ etiqueta }: { etiqueta: string }) {
     setBuscando(true);
     setEstado(null);
     try {
-      const respuesta = await fetch("/api/descargar", {
+      const respuesta = await fetch(`/api/${org.slug}/descargar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clave }),

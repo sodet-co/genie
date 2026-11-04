@@ -11,9 +11,10 @@ export async function proxy(request: NextRequest) {
     responseCookies: escritura.cookies,
   });
 
-  const { pathname } = request.nextUrl;
-  if (!accessToken && pathname.startsWith("/admin")) {
-    const respuesta = NextResponse.redirect(new URL("/ingresar", request.url));
+  // /<org>/admin/... sin sesión → /<org>/ingresar (las API responden 401).
+  const [, org, seccion] = request.nextUrl.pathname.split("/");
+  if (!accessToken && org !== "api" && seccion === "admin") {
+    const respuesta = NextResponse.redirect(new URL(`/${org}/ingresar`, request.url));
     for (const c of escritura.cookies.getAll()) respuesta.cookies.set(c);
     return respuesta;
   }
@@ -27,5 +28,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/:org/admin/:path*", "/api/:org/admin/:path*"],
 };

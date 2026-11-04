@@ -1,6 +1,6 @@
 import { publicarLote, type ItemPublicacion } from "./generar";
 import { medidasPagina } from "./plantilla";
-import { PLANTILLAS_EVENTO } from "./plantillas-evento";
+import type { Organizacion } from "./organizaciones";
 import { cargarPlantillaEvento } from "./preparar-plantilla";
 import { esTipo } from "./tipos";
 
@@ -16,13 +16,14 @@ export type CertificadoRegenerable = {
 // Vuelve a generar certificados ya publicados con la plantilla actual y los
 // datos guardados. Cada uno reemplaza al anterior (misma clave).
 export async function regenerar(
+  org: Organizacion,
   certificados: CertificadoRegenerable[],
   opciones: { onProgreso: (hechos: number) => void; estaCancelado: () => boolean },
 ) {
   const ids = new Set(certificados.map((c) => c.plantilla));
   const plantillas = new Map(
     await Promise.all(
-      PLANTILLAS_EVENTO.filter((p) => ids.has(p.id)).map(
+      org.evento.plantillas.filter((p) => ids.has(p.id)).map(
         async (p) => [p.id, await cargarPlantillaEvento(p)] as const,
       ),
     ),
@@ -44,6 +45,7 @@ export async function regenerar(
   });
 
   return publicarLote(items, {
+    organizacion: org.slug,
     pagina: medidasPagina("carta", "horizontal"),
     campoClave: "nombre",
     campoNombre: "nombre",

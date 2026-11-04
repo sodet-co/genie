@@ -55,6 +55,62 @@
   }
 }
 
+/* -------------------------------------------------------------------------
+   Temas por organización (/<slug>): solo cambian los tokens de color, los
+   componentes y la estructura son los de Genie. Se activan con data-org en el
+   layout de la organización.
+   ------------------------------------------------------------------------- */
+
+/* Franja de color bajo el encabezado: solo si el tema la define. */
+.franja {
+  display: none;
+}
+
+/* Universidad del Atlántico: colores del certificado del XVII Seminario
+   (verde institucional, fondo crema, franja dorado / rojo / azul). */
+[data-org="ua"] {
+  --surface: #f6f2e9;
+  --surface-raised: #fffdf8;
+  --surface-sunken: #efe8da;
+  --border: #e4dac6;
+  --border-strong: #9a8d70;
+  --ink: #1f2620;
+  --ink-muted: #5d6357;
+  --brand: #1b6b3e;
+  --brand-strong: #13512e;
+  --on-brand: #ffffff;
+  --brand-soft: #e5f0e6;
+  --brand-soft-ink: #13512e;
+  --gold: #c9962b;
+  --focus: #1f6fbf;
+  --franja: linear-gradient(90deg, #d8a93a 0%, #c9962b 62%, #b3332c 62%, #b3332c 81%, #3d93d6 81%);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-org="ua"] {
+    --surface: #11140f;
+    --surface-raised: #191d16;
+    --surface-sunken: #0c0e0a;
+    --border: #2b3126;
+    --border-strong: #5f6955;
+    --ink: #ece7da;
+    --ink-muted: #a7a493;
+    --brand: #5cc184;
+    --brand-strong: #82d3a2;
+    --on-brand: #082513;
+    --brand-soft: #16261b;
+    --brand-soft-ink: #95dbb0;
+    --gold: #e0b54a;
+    --focus: #7db4f0;
+  }
+}
+
+[data-org] .franja {
+  display: block;
+  height: 4px;
+  background: var(--franja, transparent);
+}
+
 @theme inline {
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);

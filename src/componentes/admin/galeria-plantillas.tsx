@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { VistaPrevia } from "@/componentes/generador/vista-previa";
 import { medidasPagina } from "@/lib/plantilla";
-import { DATOS_EJEMPLO, PLANTILLAS_EVENTO } from "@/lib/plantillas-evento";
+import { useOrganizacion } from "@/componentes/organizacion";
+import { DATOS_EJEMPLO } from "@/lib/organizaciones";
 import {
   cargarPlantillaEvento,
   type Plantilla,
@@ -12,13 +13,14 @@ import {
 const PAGINA = medidasPagina("carta", "horizontal");
 
 export function GaleriaPlantillas() {
+  const org = useOrganizacion();
   const [cargadas, setCargadas] = useState<Record<string, Plantilla | "error">>(
     {},
   );
 
   useEffect(() => {
     let vigente = true;
-    for (const p of PLANTILLAS_EVENTO) {
+    for (const p of org.evento.plantillas) {
       cargarPlantillaEvento(p)
         .then(
           (plantilla) =>
@@ -32,11 +34,11 @@ export function GaleriaPlantillas() {
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [org]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {PLANTILLAS_EVENTO.map((p) => {
+      {org.evento.plantillas.map((p) => {
         const plantilla = cargadas[p.id];
         return (
           <section

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { ResultadoPublicacion } from "@/lib/generar";
 import { etiquetaTipo } from "@/lib/tipos";
+import { useOrganizacion } from "@/componentes/organizacion";
 import { Mensaje } from "./mensaje";
 
 const VISIBLES = 10;
@@ -36,6 +39,7 @@ export function ResumenPublicacion({
   conEnlace?: boolean;
 }) {
   const { cambiosTipo } = resultado;
+  const org = useOrganizacion();
   return (
     <div className="flex flex-col gap-2">
       <Mensaje tipo={resultado.fallidos.length ? "aviso" : "ok"}>
@@ -43,7 +47,7 @@ export function ResumenPublicacion({
         {conEnlace && (
           <>
             {" "}
-            <Link href="/admin" className="enlace">
+            <Link href={`/${org.slug}/admin`} className="enlace">
               Ver certificados
             </Link>
           </>

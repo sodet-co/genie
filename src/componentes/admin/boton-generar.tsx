@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Dialogo } from "@/componentes/dialogo";
 import { GeneradorEvento } from "@/componentes/evento/generador-evento";
-import { EVENTO_ACTUAL } from "@/lib/plantillas-evento";
+import { useOrganizacion } from "@/componentes/organizacion";
 
 export function BotonGenerar() {
   const router = useRouter();
+  const org = useOrganizacion();
   const [abierto, setAbierto] = useState(false);
   // Se monta al abrir por primera vez y se conserva: cerrar el popup no borra
   // la lista cargada.
@@ -39,8 +40,8 @@ export function BotonGenerar() {
         titulo="Generar certificados"
         descripcion={
           <>
-            {EVENTO_ACTUAL.nombre} ·{" "}
-            <Link href="/admin/otro-evento" className="enlace">
+            {org.evento.nombre} ·{" "}
+            <Link href={`/${org.slug}/admin/otro-evento`} className="enlace">
               ¿Otro evento? Sube su plantilla
             </Link>
           </>

@@ -21,24 +21,41 @@ export function clienteAdmin() {
   });
 }
 
-// Devuelve el usuario si la sesión (cookie) es válida. Todo usuario de InsForge
-// es admin: el registro público está desactivado y las cuentas se crean a mano.
-// La validación la hace InsForge, no solo la presencia de la cookie.
-// Con cache(): una sola consulta a InsForge por petición, aunque la usen el
-// encabezado y la página.
-export const usuarioAdmin = cache(async () => {
+// Usuario de la sesión (cookie), validado contra InsForge, no solo por la
+// presencia de la cookie. Con cache(): una sola consulta por petición.
+const usuarioSesion = cache(async () => {
   // cookies() queda fuera del try: durante el prerender rechaza a propósito y
   // Next debe ver ese rechazo.
   const almacen = await cookies();
   try {
     const cliente = createServerClient({ cookies: almacen });
     const { data } = await cliente.auth.getCurrentUser();
-    const usuario = data.user;
-    return usuario ?? null;
+    return data.user ?? null;
   } catch (error) {
     console.error(error);
     return null;
   }
+});
+
+// ¿El usuario administra esta organización? (tabla miembros)
+export async function esMiembro(userId: string, organizacion: string) {
+  const { data, error } = await clienteAdmin()
+    .database.from("miembros")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("organizacion", organizacion)
+    .maybeSingle();
+  if (error) console.error(error);
+  return Boolean(data);
+}
+
+// El usuario si tiene sesión y es miembro de la organización; si no, null.
+// Las cuentas se crean a mano (el registro público está desactivado) y se
+// asignan a su institución en la tabla miembros.
+export const usuarioAdmin = cache(async (organizacion: string) => {
+  const usuario = await usuarioSesion();
+  if (!usuario) return null;
+  return (await esMiembro(usuario.id, organizacion)) ? usuario : null;
 });
 
 export type FilaCertificado = {
@@ -47,6 +64,7 @@ export type FilaCertificado = {
   clave_original: string;
   nombre: string;
   tipo: string;
+  organizacion: string;
   plantilla: string | null;
   datos: Record<string, string>;
   archivo_key: string;
