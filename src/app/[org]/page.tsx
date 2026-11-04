@@ -3,11 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Encabezado } from "@/componentes/encabezado";
 import { FormularioDescarga } from "@/componentes/portal/formulario-descarga";
+import { PortalUA } from "@/componentes/temas/ua/portal-ua";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 
 export default async function Portal({ params }: PageProps<"/[org]">) {
   const org = buscarOrganizacion((await params).org);
   if (!org) notFound();
+  if (org.diseno === "ua") return <PortalUA org={org} />;
   return (
     <>
       <Encabezado seccion={org.nombre} inicio={`/${org.slug}`}>

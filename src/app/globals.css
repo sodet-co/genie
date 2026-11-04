@@ -67,8 +67,10 @@
 }
 
 /* Universidad del Atlántico: colores del certificado del XVII Seminario
-   (verde institucional, fondo crema, franja dorado / rojo / azul). */
+   (verde institucional, fondo crema, franja dorado / rojo / azul). Siempre en
+   claro, como el certificado: las ilustraciones son sobre crema. */
 [data-org="ua"] {
+  color-scheme: light;
   --surface: #f6f2e9;
   --surface-raised: #fffdf8;
   --surface-sunken: #efe8da;
@@ -86,24 +88,6 @@
   --franja: linear-gradient(90deg, #d8a93a 0%, #c9962b 62%, #b3332c 62%, #b3332c 81%, #3d93d6 81%);
 }
 
-@media (prefers-color-scheme: dark) {
-  [data-org="ua"] {
-    --surface: #11140f;
-    --surface-raised: #191d16;
-    --surface-sunken: #0c0e0a;
-    --border: #2b3126;
-    --border-strong: #5f6955;
-    --ink: #ece7da;
-    --ink-muted: #a7a493;
-    --brand: #5cc184;
-    --brand-strong: #82d3a2;
-    --on-brand: #082513;
-    --brand-soft: #16261b;
-    --brand-soft-ink: #95dbb0;
-    --gold: #e0b54a;
-    --focus: #7db4f0;
-  }
-}
 
 [data-org] .franja {
   display: block;

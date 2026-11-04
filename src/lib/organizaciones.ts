@@ -25,6 +25,9 @@ export type Organizacion = {
   nombre: string;
   // Lo que la persona escribe en el portal para encontrar su certificado.
   etiquetaBusqueda: string;
+  // Portal con diseño propio (src/componentes/temas/<diseno>); sin él, el
+  // portal estándar de Genie con los colores de la organización.
+  diseno?: "ua";
   evento: {
     nombre: string;
     plantillas: PlantillaEvento[];
@@ -47,6 +50,7 @@ export const ORGANIZACIONES: Record<string, Organizacion> = {
     slug: "ua",
     nombre: "Universidad del Atlántico",
     etiquetaBusqueda: "Nombre completo",
+    diseno: "ua",
     evento: {
       nombre: "XVII Seminario Internacional Investigación Urbano Regional",
       plantillas: plantillas("/plantillas/ua/seminario-xvii", [
