@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Encabezado } from "@/componentes/encabezado";
-import { MarcoUA, TITULO_UA } from "@/componentes/temas/ua/marco-ua";
+import { MarcoUA, TARJETA_UA, TITULO_UA } from "@/componentes/temas/ua/marco-ua";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { FormularioIngreso } from "./formulario-ingreso";
 
@@ -12,8 +12,8 @@ export default async function Ingresar({ params }: PageProps<"/[org]/ingresar">)
   const org = buscarOrganizacion((await params).org);
   if (!org) notFound();
 
-  const tarjeta = (titulo: string) => (
-    <div className="w-full max-w-sm rounded-xl border border-border bg-surface-raised p-5 shadow-card sm:p-8">
+  const tarjeta = (titulo: string, clase: string) => (
+    <div className={`${clase} max-w-sm`}>
       <h1 className={titulo}>Ingresar al panel</h1>
       <p className="mt-1 text-ink-muted">Solo para el equipo que administra los certificados.</p>
       <FormularioIngreso />
@@ -34,7 +34,7 @@ export default async function Ingresar({ params }: PageProps<"/[org]/ingresar">)
   if (org.diseno === "ua") {
     return (
       <MarcoUA org={org} accion={volver}>
-        {tarjeta(TITULO_UA)}
+        {tarjeta(TITULO_UA, TARJETA_UA)}
       </MarcoUA>
     );
   }
@@ -44,7 +44,10 @@ export default async function Ingresar({ params }: PageProps<"/[org]/ingresar">)
         {volver}
       </Encabezado>
       <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-10 sm:px-6">
-        {tarjeta("text-h1 font-semibold")}
+        {tarjeta(
+          "text-h1 font-semibold",
+          "w-full rounded-lg border border-border bg-surface-raised p-5 shadow-card sm:p-8",
+        )}
       </main>
     </>
   );

@@ -61,3 +61,8 @@ next-env.d.ts
 
 # Descargas de prueba
 plantillas/*.pdf
+
+# Bocetos y archivos de referencia
+plantillas/*.jpeg
+plantillas/*.jpg
+plantillas/fondo*.png

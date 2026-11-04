@@ -89,6 +89,22 @@
 }
 
 
+/* Páginas públicas de la UA (bosquejo): campos redondeados y botón dorado. */
+.portal-ua .campo {
+  border-radius: 8px;
+  border-width: 1.5px;
+  border-color: #8f8f8f;
+}
+.portal-ua .boton-primario {
+  border-radius: 8px;
+  background-color: #b8860b;
+  font-weight: 600;
+  color: #fff;
+}
+.portal-ua .boton-primario:hover {
+  background-color: #9a7009;
+}
+
 [data-org] .franja {
   display: block;
   height: 4px;

@@ -1,5 +1,4 @@
 import { Source_Serif_4 } from "next/font/google";
-import Link from "next/link";
 import type { Organizacion } from "@/lib/organizaciones";
 
 // La serif del certificado, solo para las páginas públicas de la UA.
@@ -9,39 +8,33 @@ const serif = Source_Serif_4({
   variable: "--font-serif-ua",
 });
 
-// Clase para títulos con la serif del certificado.
+// Títulos de las tarjetas: serif del certificado en verde institucional.
 export const TITULO_UA =
-  "font-[family-name:var(--font-serif-ua)] text-[26px] font-bold leading-tight text-ink";
+  "font-[family-name:var(--font-serif-ua)] text-[26px] font-bold leading-tight text-brand sm:text-[28px]";
 
-// Marco de las páginas públicas de la UA (portal e ingreso): encabezado como
-// el pie, fondo beige del certificado y títulos en su serif.
+// Tarjeta de las páginas públicas de la UA (descarga e ingreso).
+export const TARJETA_UA =
+  "w-full rounded-2xl bg-surface-raised p-6 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] sm:p-8";
+
+// Marco de las páginas públicas de la UA: el fondo ilustrado del evento a
+// página completa y la tarjeta encima (estilos de .portal-ua en globals.css).
+// En vertical (celular) la ilustración va completa abajo y la tarjeta se
+// centra en el espacio libre de arriba; en horizontal cubre toda la pantalla.
 export function MarcoUA({
-  org,
   accion,
   children,
 }: {
   org: Organizacion;
-  // Enlace a la derecha del encabezado (p. ej. "Ingresar").
+  // Enlace en la esquina superior derecha (p. ej. "Ingresar" o "Volver").
   accion?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${serif.variable} flex flex-1 flex-col`}>
-      {/* Mismo estilo del pie: fondo claro y borde fino. */}
-      <header className="border-b border-border bg-surface-raised">
-        <div aria-hidden className="franja" />
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
-          <Link
-            href={`/${org.slug}`}
-            className="truncate font-[family-name:var(--font-serif-ua)] text-[19px] font-bold text-ink sm:text-[22px]"
-          >
-            {org.nombre}
-          </Link>
-          {accion}
-        </div>
-      </header>
-
-      <main className="flex flex-1 flex-col items-center justify-center bg-[#f4efe0] px-4 py-12 sm:px-6 sm:py-16">
+    <div
+      className={`${serif.variable} portal-ua relative flex flex-1 flex-col bg-[#f3efe0] bg-[url(/temas/ua/fondo.png)] bg-[length:100%_auto] bg-bottom bg-no-repeat landscape:bg-cover landscape:bg-center`}
+    >
+      {accion && <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-5">{accion}</div>}
+      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-[78vw] pt-16 sm:px-6 landscape:pb-16">
         {children}
       </main>
     </div>
