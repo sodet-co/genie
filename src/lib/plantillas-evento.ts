@@ -5,6 +5,7 @@ import type { TipoCertificado } from "./tipos";
 // un HTML a mano desde "Generar".
 export const EVENTO_ACTUAL = {
   nombre: "XVII Seminario Internacional Investigación Urbano Regional",
+  nombreCorto: "XVII Seminario",
   carpeta: "/plantillas/seminario-xvii",
 };
 
@@ -49,6 +50,10 @@ export const PLANTILLAS_EVENTO: PlantillaEvento[] = [
 
 export const urlHtml = (p: PlantillaEvento) => `${EVENTO_ACTUAL.carpeta}/${p.id}.html`;
 export const urlFondo = (p: PlantillaEvento) => `${EVENTO_ACTUAL.carpeta}/${p.id}.png`;
+
+export function buscarPlantillaPorTipo(tipo: TipoCertificado | "") {
+  return PLANTILLAS_EVENTO.find((p) => p.tipo === tipo) ?? null;
+}
 
 export function buscarPlantillaEvento(id: string | undefined | null) {
   return PLANTILLAS_EVENTO.find((p) => p.id === id) ?? null;

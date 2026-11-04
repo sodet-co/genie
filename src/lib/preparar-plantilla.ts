@@ -14,8 +14,6 @@ export type Plantilla = {
   faltantes: string[];
   // Hojas de estilo externas (ej. Google Fonts) que no se pudieron descargar.
   externosFallidos: string[];
-  // Si viene de las plantillas ya cargadas del evento.
-  predefinida?: PlantillaEvento;
 };
 
 // Deja la plantilla autocontenida: imágenes, fuentes y CSS externo embebidos,
@@ -52,8 +50,5 @@ export async function cargarPlantillaEvento(p: PlantillaEvento): Promise<Plantil
       return r.blob();
     }),
   ]);
-  const plantilla = await prepararPlantilla(html, `${p.id}.html`, [
-    { nombre: `${p.id}.png`, datos: fondo },
-  ]);
-  return { ...plantilla, predefinida: p };
+  return prepararPlantilla(html, `${p.id}.html`, [{ nombre: `${p.id}.png`, datos: fondo }]);
 }

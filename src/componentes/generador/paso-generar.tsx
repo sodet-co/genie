@@ -1,7 +1,6 @@
 "use client";
 
 import { CloudUpload, X } from "lucide-react";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   Cancelado,
@@ -13,6 +12,7 @@ import {
 import type { Pagina, Registro } from "@/lib/plantilla";
 import { etiquetaTipo, TIPOS, type TipoCertificado } from "@/lib/tipos";
 import { Mensaje } from "./mensaje";
+import { ListaProblemas, ResumenPublicacion } from "./resultado-publicacion";
 
 type Props = {
   html: string;
@@ -30,7 +30,6 @@ type Props = {
 };
 
 const LIMITE_RECOMENDADO = 300;
-const PROBLEMAS_VISIBLES = 10;
 
 export function PasoGenerar(props: Props) {
   const { registros, marcadores, ocupado, onOcupado } = props;
@@ -51,19 +50,27 @@ export function PasoGenerar(props: Props) {
     onOcupado(true);
     try {
       setResultado(
-        await publicarLote(registros, {
-          html: props.html,
-          pagina: props.pagina,
-          campoClave: props.campoClave,
-          campoNombre: props.campoNombre,
-          tipo,
-          onProgreso: setHechos,
-          estaCancelado: () => cancelado.current,
-        }),
+        await publicarLote(
+          registros.map((registro, i) => ({
+            fila: i + 1,
+            registro,
+            html: props.html,
+            tipo,
+          })),
+          {
+            pagina: props.pagina,
+            campoClave: props.campoClave,
+            campoNombre: props.campoNombre,
+            onProgreso: setHechos,
+            estaCancelado: () => cancelado.current,
+          },
+        ),
       );
     } catch (e) {
       if (e instanceof Cancelado) {
-        setError("Publicación cancelada. Los certificados ya subidos quedan publicados.");
+        setError(
+          "Publicación cancelada. Los certificados ya subidos quedan publicados.",
+        );
       } else if (e instanceof SesionVencida) {
         setError("Tu sesión venció. Vuelve a ingresar y publica de nuevo.");
       } else {
@@ -75,7 +82,9 @@ export function PasoGenerar(props: Props) {
     }
   }
 
-  const porcentaje = registros.length ? Math.round((hechos / registros.length) * 100) : 0;
+  const porcentaje = registros.length
+    ? Math.round((hechos / registros.length) * 100)
+    : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -84,7 +93,9 @@ export function PasoGenerar(props: Props) {
           Tipo de certificado
           <select
             value={props.tipo}
-            onChange={(e) => props.onTipo(e.target.value as TipoCertificado | "")}
+            onChange={(e) =>
+              props.onTipo(e.target.value as TipoCertificado | "")
+            }
             disabled={ocupado}
             required
             className="campo"
@@ -115,7 +126,8 @@ export function PasoGenerar(props: Props) {
             ))}
           </select>
           <span className="text-small font-normal text-ink-muted">
-            Lo que la persona escribe en la página pública para encontrar su certificado.
+            Lo que la persona escribe en la página pública para encontrar su
+            certificado.
           </span>
         </label>
         <label className="etiqueta">
@@ -139,26 +151,14 @@ export function PasoGenerar(props: Props) {
       </div>
 
       <Mensaje tipo="aviso">
-        Cada persona tiene un solo certificado: si ya existe uno con la misma clave (de cualquier tipo), se reemplaza por el nuevo.
+        Cada persona tiene un solo certificado: si ya existe uno con la misma
+        clave (de cualquier tipo), se reemplaza por el nuevo.
       </Mensaje>
 
-      {problemas.length > 0 && (
-        <div className="alerta-error flex flex-col gap-1" role="alert">
-          <p className="font-medium">
-            Corrige {problemas.length} registro(s) antes de publicar:
-          </p>
-          <ul className="list-disc pl-5">
-            {problemas.slice(0, PROBLEMAS_VISIBLES).map((p) => (
-              <li key={p.fila}>
-                Fila {p.fila}: {p.motivo}
-              </li>
-            ))}
-            {problemas.length > PROBLEMAS_VISIBLES && (
-              <li>y {problemas.length - PROBLEMAS_VISIBLES} más.</li>
-            )}
-          </ul>
-        </div>
-      )}
+      <ListaProblemas
+        titulo={`Corrige ${problemas.length} registro(s) antes de publicar:`}
+        problemas={problemas}
+      />
 
       {registros.length > LIMITE_RECOMENDADO && (
         <Mensaje tipo="aviso">
@@ -193,46 +193,19 @@ export function PasoGenerar(props: Props) {
       {ocupado && (
         <div className="flex flex-col gap-1">
           <div className="h-1.5 w-full overflow-hidden rounded-sm bg-surface-sunken">
-            <div className="h-full bg-brand transition-all" style={{ width: `${porcentaje}%` }} />
+            <div
+              className="h-full bg-brand transition-all"
+              style={{ width: `${porcentaje}%` }}
+            />
           </div>
           <p className="text-ink-muted">
-            Publicando {Math.min(hechos + 1, registros.length)} de {registros.length}…
+            Publicando {Math.min(hechos + 1, registros.length)} de{" "}
+            {registros.length}…
           </p>
         </div>
       )}
 
-      {resultado && (
-        <div className="flex flex-col gap-2">
-          <Mensaje tipo={resultado.fallidos.length ? "aviso" : "ok"}>
-            {resultado.nuevos} nuevo(s) y {resultado.reemplazados} reemplazado(s).{" "}
-            <Link href="/admin" className="enlace">
-              Ver certificados
-            </Link>
-          </Mensaje>
-          {resultado.cambiosTipo.length > 0 && (
-            <Mensaje tipo="aviso">
-              {resultado.cambiosTipo.length} persona(s) tenían un certificado de otro tipo y
-              se reemplazó: {resultado.cambiosTipo
-                .slice(0, PROBLEMAS_VISIBLES)
-                .map((c) => `fila ${c.fila} (antes ${etiquetaTipo(c.tipoAnterior).toLowerCase()})`)
-                .join(", ")}
-              {resultado.cambiosTipo.length > PROBLEMAS_VISIBLES && "…"}
-            </Mensaje>
-          )}
-          {resultado.fallidos.length > 0 && (
-            <div className="alerta-error flex flex-col gap-1" role="alert">
-              <p className="font-medium">{resultado.fallidos.length} no se publicaron:</p>
-              <ul className="list-disc pl-5">
-                {resultado.fallidos.slice(0, PROBLEMAS_VISIBLES).map((p) => (
-                  <li key={p.fila}>
-                    Fila {p.fila}: {p.motivo}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
+      {resultado && <ResumenPublicacion resultado={resultado} />}
 
       {error && <Mensaje tipo="error">{error}</Mensaje>}
     </div>

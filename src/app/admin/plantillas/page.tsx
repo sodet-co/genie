@@ -1,3 +1,5 @@
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { GaleriaPlantillas } from "@/componentes/admin/galeria-plantillas";
 import { EVENTO_ACTUAL } from "@/lib/plantillas-evento";
 
@@ -6,11 +8,17 @@ export const metadata = { title: "Plantillas · Certificados" };
 export default function Plantillas() {
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-h1 font-semibold">Plantillas</h1>
-        <p className="mt-1 text-ink-muted">
-          {EVENTO_ACTUAL.nombre}. Así se ve cada certificado con datos de ejemplo.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-h1 font-semibold">Plantillas</h1>
+          <p className="mt-1 text-ink-muted">
+            {EVENTO_ACTUAL.nombre}. Así se ve cada certificado con datos de ejemplo.
+          </p>
+        </div>
+        <Link href="/admin/generar" className="boton-primario">
+          Generar certificados
+          <ArrowRight aria-hidden size={16} strokeWidth={1.75} />
+        </Link>
       </div>
       <GaleriaPlantillas />
     </div>

@@ -11,7 +11,7 @@ export type ResultadoExcel = {
 };
 
 // Excel en español suele guardar los CSV en ANSI (Windows-1252), no UTF-8.
-function decodificarTexto(buffer: ArrayBuffer) {
+export function decodificarTexto(buffer: ArrayBuffer) {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
   } catch {

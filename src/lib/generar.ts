@@ -1,7 +1,12 @@
 import { normalizarBusqueda } from "./busqueda";
 import { crearPdf, descargar, Renderizador } from "./pdf";
 import type { TipoCertificado } from "./tipos";
-import { nombreSeguro, rellenar, type Pagina, type Registro } from "./plantilla";
+import {
+  nombreSeguro,
+  rellenar,
+  type Pagina,
+  type Registro,
+} from "./plantilla";
 
 type Opciones = {
   html: string;
@@ -14,13 +19,22 @@ export class Cancelado extends Error {}
 export class SesionVencida extends Error {}
 
 // Descarga local de un solo PDF, para revisarlo antes de publicar.
-export async function generarIndividual(registro: Registro, opciones: Opciones) {
+export async function generarIndividual(
+  registro: Registro,
+  opciones: Opciones,
+) {
   const renderizador = new Renderizador(opciones.pagina);
   try {
-    const imagen = await renderizador.renderizar(rellenar(opciones.html, registro));
+    const imagen = await renderizador.renderizar(
+      rellenar(opciones.html, registro),
+    );
     const pdf = await crearPdf([imagen], opciones.pagina);
     const nombre = registro[opciones.campoNombre]?.trim();
-    descargar(pdf, `${nombre ? nombreSeguro(nombre) : "certificado"}.pdf`, "application/pdf");
+    descargar(
+      pdf,
+      `${nombre ? nombreSeguro(nombre) : "certificado"}.pdf`,
+      "application/pdf",
+    );
   } finally {
     renderizador.destruir();
   }
@@ -60,13 +74,23 @@ export type ResultadoPublicacion = {
   fallidos: ProblemaRegistro[];
 };
 
+export type ItemPublicacion = {
+  // Número de fila que se muestra en los mensajes.
+  fila: number;
+  registro: Registro;
+  // Plantilla ya preparada (cada fila puede usar una distinta).
+  html: string;
+  tipo: TipoCertificado;
+};
+
 // Genera cada PDF en el navegador y lo sube al servidor, que lo guarda y lo
 // deja disponible en el portal público.
 export async function publicarLote(
-  registros: Registro[],
-  opciones: Opciones & {
+  items: ItemPublicacion[],
+  opciones: {
+    pagina: Pagina;
     campoClave: string;
-    tipo: TipoCertificado;
+    campoNombre: string;
     onProgreso: (hechos: number) => void;
     estaCancelado: () => boolean;
   },
@@ -79,18 +103,24 @@ export async function publicarLote(
   };
   const renderizador = new Renderizador(opciones.pagina);
   try {
-    for (let i = 0; i < registros.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const registro = registros[i];
+      const { registro, html, tipo, fila } = items[i];
       try {
-        const imagen = await renderizador.renderizar(rellenar(opciones.html, registro));
+        const imagen = await renderizador.renderizar(rellenar(html, registro));
         const pdf = await crearPdf([imagen], opciones.pagina);
 
         const formulario = new FormData();
-        formulario.set("archivo", new Blob([pdf as Uint8Array<ArrayBuffer>], { type: "application/pdf" }), "certificado.pdf");
+        formulario.set(
+          "archivo",
+          new Blob([pdf as Uint8Array<ArrayBuffer>], {
+            type: "application/pdf",
+          }),
+          "certificado.pdf",
+        );
         formulario.set("clave", registro[opciones.campoClave] ?? "");
         formulario.set("nombre", registro[opciones.campoNombre] ?? "");
-        formulario.set("tipo", opciones.tipo);
+        formulario.set("tipo", tipo);
         formulario.set("datos", JSON.stringify(registro));
 
         const respuesta = await fetch("/api/admin/certificados", {
@@ -100,11 +130,17 @@ export async function publicarLote(
         if (respuesta.status === 401) throw new SesionVencida();
         const cuerpo = await respuesta.json().catch(() => null);
         if (!respuesta.ok) {
-          resultado.fallidos.push({ fila: i + 1, motivo: cuerpo?.error ?? `error ${respuesta.status}` });
+          resultado.fallidos.push({
+            fila,
+            motivo: cuerpo?.error ?? `error ${respuesta.status}`,
+          });
         } else if (cuerpo?.reemplazado) {
           resultado.reemplazados++;
           if (cuerpo.tipoAnterior) {
-            resultado.cambiosTipo.push({ fila: i + 1, tipoAnterior: cuerpo.tipoAnterior });
+            resultado.cambiosTipo.push({
+              fila,
+              tipoAnterior: cuerpo.tipoAnterior,
+            });
           }
         } else {
           resultado.nuevos++;
@@ -112,7 +148,10 @@ export async function publicarLote(
       } catch (error) {
         if (error instanceof SesionVencida) throw error;
         console.error(error);
-        resultado.fallidos.push({ fila: i + 1, motivo: "no se pudo generar o subir el PDF" });
+        resultado.fallidos.push({
+          fila,
+          motivo: "no se pudo generar o subir el PDF",
+        });
       }
       opciones.onProgreso(i + 1);
     }
