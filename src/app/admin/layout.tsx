@@ -12,19 +12,23 @@ export default function LayoutAdmin({ children }: LayoutProps<"/admin">) {
   return (
     <>
       <Encabezado seccion="Administración">
-        <nav className="flex items-center text-small">
+        <nav className="flex items-center gap-1 text-small sm:gap-3">
           <Link href="/admin" className="enlace px-2 py-1">
             Certificados
+          </Link>
+          <Link href="/admin/plantillas" className="enlace px-2 py-1">
+            Plantillas
           </Link>
         </nav>
         <span aria-hidden className="h-5 w-px bg-border" />
         <form action={cerrarSesion}>
           <button
             type="submit"
+            aria-label="Salir"
             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-small text-ink-muted hover:bg-surface-sunken hover:text-ink"
           >
             <LogOut aria-hidden size={16} strokeWidth={1.75} />
-            Salir
+            <span className="hidden sm:inline">Salir</span>
           </button>
         </form>
       </Encabezado>

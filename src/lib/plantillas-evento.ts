@@ -53,3 +53,8 @@ export const urlFondo = (p: PlantillaEvento) => `${EVENTO_ACTUAL.carpeta}/${p.id
 export function buscarPlantillaPorTipo(tipo: TipoCertificado | "") {
   return PLANTILLAS_EVENTO.find((p) => p.tipo === tipo) ?? null;
 }
+
+export const DATOS_EJEMPLO = {
+  nombre: "María Fernanda Rodríguez de la Hoz",
+  titulo: "Turismo comunitario y sostenibilidad territorial en el Caribe colombiano",
+};
