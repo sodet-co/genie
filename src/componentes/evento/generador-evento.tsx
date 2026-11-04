@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  CloudUpload,
-  Download,
-  Eye,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { CloudUpload, Download, Eye, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Seccion } from "@/componentes/generador/generador";
+import { Dialogo } from "@/componentes/dialogo";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { Pestana } from "@/componentes/generador/paso-datos";
 import {
@@ -18,11 +10,7 @@ import {
   ResumenPublicacion,
 } from "@/componentes/generador/resultado-publicacion";
 import { VistaPrevia } from "@/componentes/generador/vista-previa";
-import {
-  leerExcelEvento,
-  revisarPersonas,
-  type PersonaEvento,
-} from "@/lib/excel-evento";
+import { leerExcelEvento, revisarPersonas, type PersonaEvento } from "@/lib/excel-evento";
 import {
   Cancelado,
   publicarLote,
@@ -30,14 +18,8 @@ import {
   type ResultadoPublicacion,
 } from "@/lib/generar";
 import { medidasPagina } from "@/lib/plantilla";
-import {
-  buscarPlantillaPorTipo,
-  PLANTILLAS_EVENTO,
-} from "@/lib/plantillas-evento";
-import {
-  cargarPlantillaEvento,
-  type Plantilla,
-} from "@/lib/preparar-plantilla";
+import { buscarPlantillaPorTipo, PLANTILLAS_EVENTO } from "@/lib/plantillas-evento";
+import { cargarPlantillaEvento, type Plantilla } from "@/lib/preparar-plantilla";
 import { etiquetaTipo, TIPOS, type TipoCertificado } from "@/lib/tipos";
 
 const PAGINA = medidasPagina("carta", "horizontal");
@@ -45,27 +27,24 @@ const FILAS_VISIBLES = 100;
 const usaTitulo = (tipo: TipoCertificado | "") =>
   buscarPlantillaPorTipo(tipo)?.marcadores.includes("titulo") ?? false;
 
-// Carga masiva del evento actual: un Excel con Nombre, Tipo (lista
-// desplegable) y Título; cada fila sale con la plantilla de su tipo.
-export function GeneradorEvento() {
-  const [plantillas, setPlantillas] = useState<
-    Partial<Record<TipoCertificado, Plantilla>>
-  >({});
+type Plantillas = Partial<Record<TipoCertificado, Plantilla>>;
+
+// Carga del evento actual dentro del popup de "Generar certificados": un Excel
+// con Nombre, Tipo (lista desplegable) y Título, o personas una por una. Cada
+// fila sale con la plantilla de su tipo.
+export function GeneradorEvento({ onOcupado }: { onOcupado: (ocupado: boolean) => void }) {
+  const [plantillas, setPlantillas] = useState<Plantillas>({});
   const [errorPlantillas, setErrorPlantillas] = useState(false);
   const [personas, setPersonas] = useState<PersonaEvento[]>([]);
-  const [indicePrevia, setIndicePrevia] = useState(0);
   const [pestana, setPestana] = useState<"excel" | "manual">("excel");
+  const [previa, setPrevia] = useState<PersonaEvento | null>(null);
 
   useEffect(() => {
     let vigente = true;
     Promise.all(
-      PLANTILLAS_EVENTO.map(
-        async (p) => [p.tipo, await cargarPlantillaEvento(p)] as const,
-      ),
+      PLANTILLAS_EVENTO.map(async (p) => [p.tipo, await cargarPlantillaEvento(p)] as const),
     )
-      .then(
-        (cargadas) => vigente && setPlantillas(Object.fromEntries(cargadas)),
-      )
+      .then((cargadas) => vigente && setPlantillas(Object.fromEntries(cargadas)))
       .catch((e) => {
         console.error(e);
         if (vigente) setErrorPlantillas(true);
@@ -81,104 +60,74 @@ export function GeneradorEvento() {
     [problemas],
   );
 
-  function cambiar(nuevas: PersonaEvento[]) {
-    setPersonas(nuevas);
-    setIndicePrevia((i) => Math.min(i, Math.max(nuevas.length - 1, 0)));
-  }
-
-  const previa = personas[Math.min(indicePrevia, personas.length - 1)];
-  const plantillaPrevia = previa?.tipo ? plantillas[previa.tipo] : undefined;
-
   return (
-    <div className="flex flex-col gap-8 sm:gap-10">
-      <Seccion
-        numero={1}
-        titulo="Personas"
-        descripcion="Descarga el Excel modelo, llénalo y súbelo. También puedes agregar personas una por una."
-      >
-        <div role="tablist" className="flex gap-1 border-b border-border">
-          <Pestana
-            activa={pestana === "excel"}
-            onClick={() => setPestana("excel")}
-          >
-            Desde Excel
-          </Pestana>
-          <Pestana
-            activa={pestana === "manual"}
-            onClick={() => setPestana("manual")}
-          >
-            Una persona
-          </Pestana>
-        </div>
-        {pestana === "excel" ? (
-          <CargaExcel
-            onImportar={(nuevas) => cambiar([...personas, ...nuevas])}
-          />
-        ) : (
-          <FormularioPersona onAgregar={(p) => cambiar([...personas, p])} />
-        )}
-        <TablaPersonas
-          personas={personas}
-          problemaPorFila={problemaPorFila}
-          indicePrevia={indicePrevia}
-          onVer={setIndicePrevia}
-          onCambiar={cambiar}
+    <div className="flex flex-col gap-5">
+      {errorPlantillas && (
+        <Mensaje tipo="error">No se pudieron cargar las plantillas. Recarga la página.</Mensaje>
+      )}
+
+      <div role="tablist" className="flex gap-1 border-b border-border">
+        <Pestana activa={pestana === "excel"} onClick={() => setPestana("excel")}>
+          Desde Excel
+        </Pestana>
+        <Pestana activa={pestana === "manual"} onClick={() => setPestana("manual")}>
+          Una persona
+        </Pestana>
+      </div>
+      {pestana === "excel" ? (
+        <CargaExcel onImportar={(nuevas) => setPersonas([...personas, ...nuevas])} />
+      ) : (
+        <FormularioPersona
+          onAgregar={(p) => setPersonas([...personas, p])}
+          onPrevisualizar={setPrevia}
         />
-      </Seccion>
-
-      {personas.length > 0 && (
-        <Seccion
-          numero={2}
-          titulo="Vista previa"
-          descripcion="Así sale el certificado de la fila seleccionada. Usa «Ver» en la lista para cambiarla."
-        >
-          {errorPlantillas ? (
-            <Mensaje tipo="error">
-              No se pudieron cargar las plantillas. Recarga la página.
-            </Mensaje>
-          ) : !previa?.tipo ? (
-            <Mensaje tipo="aviso">
-              La fila {indicePrevia + 1} no tiene un tipo válido.
-            </Mensaje>
-          ) : plantillaPrevia ? (
-            <VistaPrevia
-              html={plantillaPrevia.html}
-              marcadores={plantillaPrevia.marcadores}
-              registro={{ nombre: previa.nombre, titulo: previa.titulo }}
-              pagina={PAGINA}
-            />
-          ) : (
-            <p className="text-ink-muted">Cargando plantillas…</p>
-          )}
-        </Seccion>
       )}
 
+      <TablaPersonas
+        personas={personas}
+        problemaPorFila={problemaPorFila}
+        onPrevisualizar={setPrevia}
+        onCambiar={setPersonas}
+      />
+
       {personas.length > 0 && (
-        <Seccion
-          numero={3}
-          titulo="Publicar"
-          descripcion="Genera los PDF y déjalos disponibles en la página pública."
-        >
-          <Publicar
-            personas={personas}
-            plantillas={plantillas}
-            problemas={problemas}
-          />
-        </Seccion>
+        <Publicar
+          personas={personas}
+          plantillas={plantillas}
+          problemas={problemas}
+          onOcupado={onOcupado}
+        />
       )}
+
+      <Dialogo
+        abierto={previa !== null}
+        onCerrar={() => setPrevia(null)}
+        titulo="Vista previa"
+        descripcion={previa && `${previa.nombre || "Sin nombre"} · ${previa.tipo ? etiquetaTipo(previa.tipo) : "sin tipo"}`}
+        ancho="max-w-4xl"
+      >
+        {previa && <ContenidoPrevia persona={previa} plantillas={plantillas} />}
+      </Dialogo>
     </div>
   );
 }
 
-function CargaExcel({
-  onImportar,
-}: {
-  onImportar: (personas: PersonaEvento[]) => void;
-}) {
-  const [mensaje, setMensaje] = useState<{
-    tipo: "ok" | "error";
-    texto: string;
-  } | null>(null);
+function ContenidoPrevia({ persona, plantillas }: { persona: PersonaEvento; plantillas: Plantillas }) {
+  if (!persona.tipo) return <Mensaje tipo="aviso">Elige un tipo de certificado válido.</Mensaje>;
+  const plantilla = plantillas[persona.tipo];
+  if (!plantilla) return <p className="text-ink-muted">Cargando plantilla…</p>;
+  return (
+    <VistaPrevia
+      html={plantilla.html}
+      marcadores={plantilla.marcadores}
+      registro={{ nombre: persona.nombre, titulo: persona.titulo }}
+      pagina={PAGINA}
+    />
+  );
+}
+
+function CargaExcel({ onImportar }: { onImportar: (personas: PersonaEvento[]) => void }) {
+  const [mensaje, setMensaje] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
 
   async function alSeleccionar(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
@@ -195,32 +144,22 @@ function CargaExcel({
         return;
       }
       onImportar(personas);
-      setMensaje({
-        tipo: "ok",
-        texto: `Se agregaron ${personas.length} persona(s) a la lista.`,
-      });
+      setMensaje({ tipo: "ok", texto: `Se agregaron ${personas.length} persona(s) a la lista.` });
     } catch (err) {
       console.error(err);
-      setMensaje({
-        tipo: "error",
-        texto: "No se pudo leer el archivo. Usa .xlsx, .xls o .csv.",
-      });
+      setMensaje({ tipo: "error", texto: "No se pudo leer el archivo. Usa .xlsx, .xls o .csv." });
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-ink-muted">
-        El modelo tiene tres columnas: <strong>Nombre</strong>,{" "}
-        <strong>Tipo</strong> (lista desplegable:{" "}
-        {TIPOS.map((t) => t.etiqueta).join(", ")}) y <strong>Título</strong>{" "}
-        (solo para ponente, conferencista y coordinador de mesa).
+        El modelo tiene tres columnas: <strong>Nombre</strong>, <strong>Tipo</strong> (lista
+        desplegable) y <strong>Título</strong> (solo para ponente, conferencista y coordinador de
+        mesa).
       </p>
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <a
-          href="/api/admin/modelo-excel"
-          className="boton-secundario self-start"
-        >
+        <a href="/api/admin/modelo-excel" className="boton-secundario self-start">
           <Download aria-hidden size={16} strokeWidth={1.75} />
           Descargar Excel modelo
         </a>
@@ -229,12 +168,7 @@ function CargaExcel({
             <Upload aria-hidden size={16} strokeWidth={1.75} />
             Excel con las personas
           </span>
-          <input
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={alSeleccionar}
-            className="archivo"
-          />
+          <input type="file" accept=".xlsx,.xls,.csv" onChange={alSeleccionar} className="archivo" />
         </label>
       </div>
       {mensaje && <Mensaje tipo={mensaje.tipo}>{mensaje.texto}</Mensaje>}
@@ -244,24 +178,28 @@ function CargaExcel({
 
 function FormularioPersona({
   onAgregar,
+  onPrevisualizar,
 }: {
   onAgregar: (persona: PersonaEvento) => void;
+  onPrevisualizar: (persona: PersonaEvento) => void;
 }) {
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoCertificado | "">("");
   const [titulo, setTitulo] = useState("");
   const conTitulo = usaTitulo(tipo);
 
+  const persona = (): PersonaEvento => ({
+    nombre: nombre.trim().replace(/\s+/g, " "),
+    tipo,
+    tipoOriginal: tipo ? etiquetaTipo(tipo) : "",
+    titulo: conTitulo ? titulo.trim().replace(/\s+/g, " ") : "",
+  });
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onAgregar({
-          nombre: nombre.trim().replace(/\s+/g, " "),
-          tipo,
-          tipoOriginal: tipo ? etiquetaTipo(tipo) : "",
-          titulo: conTitulo ? titulo.trim().replace(/\s+/g, " ") : "",
-        });
+        onAgregar(persona());
         setNombre("");
         setTitulo("");
       }}
@@ -270,12 +208,7 @@ function FormularioPersona({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="etiqueta">
           Nombre
-          <input
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-            className="campo"
-          />
+          <input value={nombre} onChange={(e) => setNombre(e.target.value)} required className="campo" />
         </label>
         <label className="etiqueta">
           Tipo
@@ -296,19 +229,23 @@ function FormularioPersona({
         {conTitulo && (
           <label className="etiqueta sm:col-span-2">
             Título
-            <input
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              required
-              className="campo"
-            />
+            <input value={titulo} onChange={(e) => setTitulo(e.target.value)} required className="campo" />
           </label>
         )}
       </div>
-      <div>
+      <div className="flex flex-wrap gap-3">
         <button type="submit" className="boton-primario">
           <Plus aria-hidden size={16} strokeWidth={1.75} />
           Agregar a la lista
+        </button>
+        <button
+          type="button"
+          onClick={() => onPrevisualizar(persona())}
+          disabled={!tipo}
+          className="boton-secundario"
+        >
+          <Eye aria-hidden size={16} strokeWidth={1.75} />
+          Previsualizar
         </button>
       </div>
     </form>
@@ -318,16 +255,16 @@ function FormularioPersona({
 function TablaPersonas({
   personas,
   problemaPorFila,
-  indicePrevia,
-  onVer,
+  onPrevisualizar,
   onCambiar,
 }: {
   personas: PersonaEvento[];
   problemaPorFila: Map<number, string>;
-  indicePrevia: number;
-  onVer: (indice: number) => void;
+  onPrevisualizar: (persona: PersonaEvento) => void;
   onCambiar: (personas: PersonaEvento[]) => void;
 }) {
+  const [confirmarVaciar, setConfirmarVaciar] = useState(false);
+
   if (personas.length === 0) {
     return (
       <p className="rounded-md border border-dashed border-border-strong bg-surface p-6 text-center text-ink-muted">
@@ -349,23 +286,33 @@ function TablaPersonas({
           {porTipo.length > 0 && (
             <span className="font-normal text-ink-muted">
               {" · "}
-              {porTipo
-                .map((t) => `${t.total} ${t.etiqueta.toLowerCase()}`)
-                .join(", ")}
+              {porTipo.map((t) => `${t.total} ${t.etiqueta.toLowerCase()}`).join(", ")}
             </span>
           )}
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            if (window.confirm("¿Quitar todas las personas de la lista?"))
-              onCambiar([]);
-          }}
-          className="boton-peligro"
-        >
-          <Trash2 aria-hidden size={16} strokeWidth={1.75} />
-          Vaciar lista
-        </button>
+        {confirmarVaciar ? (
+          <span className="flex items-center gap-3 text-small">
+            ¿Quitar a todas?
+            <button
+              type="button"
+              onClick={() => {
+                onCambiar([]);
+                setConfirmarVaciar(false);
+              }}
+              className="enlace text-danger"
+            >
+              Sí, vaciar
+            </button>
+            <button type="button" onClick={() => setConfirmarVaciar(false)} className="enlace">
+              No
+            </button>
+          </span>
+        ) : (
+          <button type="button" onClick={() => setConfirmarVaciar(true)} className="boton-peligro">
+            <Trash2 aria-hidden size={16} strokeWidth={1.75} />
+            Vaciar lista
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto rounded-md border border-border bg-surface-raised">
         <table className="w-full text-left">
@@ -382,48 +329,33 @@ function TablaPersonas({
             {personas.slice(0, FILAS_VISIBLES).map((p, i) => {
               const problema = problemaPorFila.get(i + 1);
               return (
-                <tr
-                  key={i}
-                  className={i === indicePrevia ? "bg-brand-soft" : undefined}
-                >
-                  <td className="px-3 py-2.5 align-top text-ink-muted">
-                    {i + 1}
-                  </td>
+                <tr key={i}>
+                  <td className="px-3 py-2.5 align-top text-ink-muted">{i + 1}</td>
                   <td className="max-w-64 px-3 py-2.5 align-top">
                     <span className="block truncate">{p.nombre || "—"}</span>
-                    {problema && (
-                      <span className="block text-small text-danger">
-                        {problema}
-                      </span>
-                    )}
+                    {problema && <span className="block text-small text-danger">{problema}</span>}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 align-top">
                     {p.tipo ? (
                       etiquetaTipo(p.tipo)
                     ) : (
-                      <span className="text-danger">
-                        {p.tipoOriginal || "—"}
-                      </span>
+                      <span className="text-danger">{p.tipoOriginal || "—"}</span>
                     )}
                   </td>
-                  <td className="max-w-80 truncate px-3 py-2.5 align-top text-ink-muted">
-                    {p.titulo}
-                  </td>
+                  <td className="max-w-72 truncate px-3 py-2.5 align-top text-ink-muted">{p.titulo}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right align-top">
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-4">
                       <button
                         type="button"
-                        onClick={() => onVer(i)}
+                        onClick={() => onPrevisualizar(p)}
                         className="enlace inline-flex items-center gap-1"
                       >
                         <Eye aria-hidden size={16} strokeWidth={1.75} />
-                        Ver
+                        Previsualizar
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          onCambiar(personas.filter((_, j) => j !== i))
-                        }
+                        onClick={() => onCambiar(personas.filter((_, j) => j !== i))}
                         className="enlace inline-flex items-center gap-1 text-danger"
                       >
                         <Trash2 aria-hidden size={16} strokeWidth={1.75} />
@@ -450,10 +382,12 @@ function Publicar({
   personas,
   plantillas,
   problemas,
+  onOcupado,
 }: {
   personas: PersonaEvento[];
-  plantillas: Partial<Record<TipoCertificado, Plantilla>>;
+  plantillas: Plantillas;
   problemas: { fila: number; motivo: string }[];
+  onOcupado: (ocupado: boolean) => void;
 }) {
   const [ocupado, setOcupado] = useState(false);
   const [hechos, setHechos] = useState(0);
@@ -462,12 +396,17 @@ function Publicar({
   const cancelado = useRef(false);
   const listas = PLANTILLAS_EVENTO.every((p) => plantillas[p.tipo]);
 
+  function marcarOcupado(valor: boolean) {
+    setOcupado(valor);
+    onOcupado(valor);
+  }
+
   async function publicar() {
     cancelado.current = false;
     setHechos(0);
     setResultado(null);
     setError(null);
-    setOcupado(true);
+    marcarOcupado(true);
     try {
       const items = personas.map((p, i) => {
         const tipo = p.tipo as TipoCertificado;
@@ -489,9 +428,7 @@ function Publicar({
       );
     } catch (e) {
       if (e instanceof Cancelado) {
-        setError(
-          "Publicación cancelada. Los certificados ya subidos quedan publicados.",
-        );
+        setError("Publicación cancelada. Los certificados ya subidos quedan publicados.");
       } else if (e instanceof SesionVencida) {
         setError("Tu sesión venció. Vuelve a ingresar y publica de nuevo.");
       } else {
@@ -499,19 +436,18 @@ function Publicar({
         setError("Ocurrió un error al publicar los certificados.");
       }
     } finally {
-      setOcupado(false);
+      marcarOcupado(false);
     }
   }
 
   const porcentaje = Math.round((hechos / personas.length) * 100);
 
   return (
-    <div className="flex flex-col gap-5">
-      <Mensaje tipo="aviso">
-        La persona descarga su certificado escribiendo su nombre. Cada persona
-        tiene un solo certificado: si ya existía uno con el mismo nombre, se
-        reemplaza.
-      </Mensaje>
+    <div className="flex flex-col gap-4 border-t border-border pt-5">
+      <p className="text-small text-ink-muted">
+        La persona descarga su certificado escribiendo su nombre. Cada persona tiene un solo
+        certificado: si ya existía uno con el mismo nombre, se reemplaza.
+      </p>
 
       <ListaProblemas
         titulo={`Corrige ${problemas.length} fila(s) antes de publicar:`}
@@ -543,19 +479,15 @@ function Publicar({
       {ocupado && (
         <div className="flex flex-col gap-1">
           <div className="h-1.5 w-full overflow-hidden rounded-sm bg-surface-sunken">
-            <div
-              className="h-full bg-brand transition-all"
-              style={{ width: `${porcentaje}%` }}
-            />
+            <div className="h-full bg-brand transition-all" style={{ width: `${porcentaje}%` }} />
           </div>
           <p className="text-ink-muted">
-            Publicando {Math.min(hechos + 1, personas.length)} de{" "}
-            {personas.length}…
+            Publicando {Math.min(hechos + 1, personas.length)} de {personas.length}…
           </p>
         </div>
       )}
 
-      {resultado && <ResumenPublicacion resultado={resultado} />}
+      {resultado && <ResumenPublicacion resultado={resultado} conEnlace={false} />}
       {error && <Mensaje tipo="error">{error}</Mensaje>}
     </div>
   );

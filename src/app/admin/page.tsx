@@ -1,5 +1,6 @@
-import { Download, Plus, Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import Link from "next/link";
+import { BotonGenerar } from "@/componentes/admin/boton-generar";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { esTipo, etiquetaTipo, TIPOS } from "@/lib/tipos";
@@ -47,10 +48,7 @@ export default async function Certificados({ searchParams }: PageProps<"/admin">
             {total} certificado(s) disponibles para descargar en la página pública.
           </p>
         </div>
-        <Link href="/admin/generar" className="boton-primario">
-          <Plus aria-hidden size={16} strokeWidth={1.75} />
-          Generar certificados
-        </Link>
+        <BotonGenerar />
       </div>
 
       <form className="flex flex-wrap gap-2" role="search">

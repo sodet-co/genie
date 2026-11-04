@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { PieSodet } from "@/componentes/pie-sodet";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-surface font-sans text-body text-ink">
         {children}
+        <PieSodet />
       </body>
     </html>
   );

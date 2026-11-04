@@ -28,15 +28,26 @@ export function ListaProblemas({
   );
 }
 
-export function ResumenPublicacion({ resultado }: { resultado: ResultadoPublicacion }) {
+export function ResumenPublicacion({
+  resultado,
+  conEnlace = true,
+}: {
+  resultado: ResultadoPublicacion;
+  conEnlace?: boolean;
+}) {
   const { cambiosTipo } = resultado;
   return (
     <div className="flex flex-col gap-2">
       <Mensaje tipo={resultado.fallidos.length ? "aviso" : "ok"}>
-        {resultado.nuevos} nuevo(s) y {resultado.reemplazados} reemplazado(s).{" "}
-        <Link href="/admin" className="enlace">
-          Ver certificados
-        </Link>
+        {resultado.nuevos} nuevo(s) y {resultado.reemplazados} reemplazado(s).
+        {conEnlace && (
+          <>
+            {" "}
+            <Link href="/admin" className="enlace">
+              Ver certificados
+            </Link>
+          </>
+        )}
       </Mensaje>
       {cambiosTipo.length > 0 && (
         <Mensaje tipo="aviso">

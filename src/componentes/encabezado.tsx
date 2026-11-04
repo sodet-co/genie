@@ -18,7 +18,7 @@ export function Encabezado({
         </Link>
         <span aria-hidden className="h-5 w-px bg-border" />
         <span className="truncate font-medium text-ink-muted">{seccion}</span>
-        <div className="ml-auto flex items-center gap-3 sm:gap-4">{children}</div>
+        <div className="ml-auto flex items-center gap-2 sm:gap-4">{children}</div>
       </div>
     </header>
   );
