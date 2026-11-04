@@ -50,7 +50,7 @@ export function PasoDatos(props: Props) {
   );
 }
 
-function Pestana({
+export function Pestana({
   activa,
   onClick,
   children,

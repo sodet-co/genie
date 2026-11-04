@@ -34,8 +34,11 @@ export function esCorreoAdmin(correo: string | null | undefined) {
 // Devuelve el usuario si la sesión (cookie) es válida y pertenece a un admin.
 // La validación la hace InsForge, no solo la presencia de la cookie.
 export async function usuarioAdmin() {
+  // cookies() queda fuera del try: durante el prerender rechaza a propósito y
+  // Next debe ver ese rechazo.
+  const almacen = await cookies();
   try {
-    const cliente = createServerClient({ cookies: await cookies() });
+    const cliente = createServerClient({ cookies: almacen });
     const { data } = await cliente.auth.getCurrentUser();
     const usuario = data.user;
     return usuario && esCorreoAdmin(usuario.email) ? usuario : null;

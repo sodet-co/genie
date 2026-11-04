@@ -16,6 +16,9 @@ export default function LayoutAdmin({ children }: LayoutProps<"/admin">) {
           <Link href="/admin" className="enlace">
             Certificados
           </Link>
+          <Link href="/admin/plantillas" className="enlace">
+            Plantillas
+          </Link>
           <Link href="/admin/generar" className="enlace">
             Generar
           </Link>

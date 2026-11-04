@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { generarIndividual } from "@/lib/generar";
 import {
   medidasPagina,
@@ -8,6 +8,8 @@ import {
   type Registro,
   type Tamano,
 } from "@/lib/plantilla";
+import { buscarPlantillaEvento } from "@/lib/plantillas-evento";
+import { cargarPlantillaEvento } from "@/lib/preparar-plantilla";
 import { adivinarTipo, type TipoCertificado } from "@/lib/tipos";
 import { Mensaje } from "./mensaje";
 import { PasoDatos } from "./paso-datos";
@@ -15,7 +17,7 @@ import { PasoGenerar } from "./paso-generar";
 import { PasoPlantilla, type Plantilla } from "./paso-plantilla";
 import { VistaPrevia } from "./vista-previa";
 
-export function Generador() {
+export function Generador({ plantillaInicial }: { plantillaInicial?: string }) {
   const [plantilla, setPlantilla] = useState<Plantilla | null>(null);
   const [tamano, setTamano] = useState<Tamano>("carta");
   const [orientacion, setOrientacion] = useState<Orientacion>("horizontal");
@@ -26,6 +28,25 @@ export function Generador() {
   const [error, setError] = useState<string | null>(null);
 
   const pagina = medidasPagina(tamano, orientacion);
+
+  // Desde "Plantillas" → "Usar esta plantilla" llega preseleccionada.
+  useEffect(() => {
+    const inicial = buscarPlantillaEvento(plantillaInicial);
+    if (!inicial) return;
+    let vigente = true;
+    cargarPlantillaEvento(inicial)
+      .then((p) => {
+        if (!vigente) return;
+        setPlantilla(p);
+        setTipo(inicial.tipo);
+        setTamano("carta");
+        setOrientacion("horizontal");
+      })
+      .catch((e) => console.error(e));
+    return () => {
+      vigente = false;
+    };
+  }, [plantillaInicial]);
   const marcadores = plantilla?.marcadores ?? [];
   const campoNombrePorDefecto =
     marcadores.find((m) => m.toLowerCase() === "nombre") ?? marcadores[0] ?? "";
@@ -65,14 +86,14 @@ export function Generador() {
       <Seccion
         numero={1}
         titulo="Plantilla"
-        descripcion="Sube el HTML del certificado y define el tamaño de la página."
+        descripcion="Elige una plantilla del evento o sube otra."
       >
         <PasoPlantilla
           plantilla={plantilla}
           onCargar={(p) => {
             setPlantilla(p);
             setIndicePrevia(0);
-            setTipo(adivinarTipo(p.nombreArchivo));
+            setTipo(p.predefinida?.tipo ?? adivinarTipo(p.nombreArchivo));
           }}
           tamano={tamano}
           orientacion={orientacion}
