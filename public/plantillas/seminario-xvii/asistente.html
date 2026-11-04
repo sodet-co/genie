@@ -32,12 +32,15 @@
       .titulo {
         position: absolute;
         display: flex;
-        align-items: center;
+        /* Pegado a la línea de abajo (crece hacia arriba si ocupa 2 líneas). */
+        align-items: flex-end;
         justify-content: center;
         text-align: center;
       }
 
       .nombre {
+        padding-bottom: 5px;
+        box-sizing: border-box;
         left: 282px;
         width: 492px;
         top: 238px;

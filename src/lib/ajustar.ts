@@ -12,8 +12,13 @@ export function ajustarTextos(doc: Document) {
     const texto = (caja.firstElementChild as HTMLElement | null) ?? caja;
     const minimo = Number(caja.dataset.ajustarMin) || 10;
     let tamano = parseFloat(vista.getComputedStyle(texto).fontSize);
-    const noCabe = () =>
-      texto.scrollHeight > caja.clientHeight + 1 || texto.scrollWidth > caja.clientWidth + 1;
+    // Espacio útil de la caja (sin su relleno).
+    const estilo = vista.getComputedStyle(caja);
+    const alto =
+      caja.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom);
+    const ancho =
+      caja.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+    const noCabe = () => texto.scrollHeight > alto + 1 || texto.scrollWidth > ancho + 1;
     while (noCabe() && tamano > minimo) {
       tamano = Math.max(minimo, tamano - 0.5);
       texto.style.fontSize = `${tamano}px`;
