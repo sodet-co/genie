@@ -49,13 +49,14 @@ export async function esMiembro(userId: string, organizacion: string) {
   return Boolean(data);
 }
 
-// El usuario si tiene sesión y es miembro de la organización; si no, null.
-// Las cuentas se crean a mano (el registro público está desactivado) y se
-// asignan a su institución en la tabla miembros.
+// El usuario si tiene sesión; si no, null. Por decisión de la dueña del
+// proyecto (2026-11-09), con una sola institución toda cuenta con sesión
+// administra el panel: las cuentas solo se crean a mano en InsForge
+// (disable_signup = true en insforge.toml). Cuando haya otra institución con
+// administradores distintos, volver a exigir esMiembro(usuario.id, organizacion).
 export const usuarioAdmin = cache(async (organizacion: string) => {
-  const usuario = await usuarioSesion();
-  if (!usuario) return null;
-  return (await esMiembro(usuario.id, organizacion)) ? usuario : null;
+  void organizacion;
+  return usuarioSesion();
 });
 
 export type FilaCertificado = {

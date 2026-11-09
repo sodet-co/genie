@@ -4,7 +4,6 @@ import { createAuthActions } from "@insforge/sdk/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { esMiembro } from "@/lib/servidor/insforge";
 
 export type EstadoIngreso = { error: string } | null;
 
@@ -29,12 +28,7 @@ export async function iniciarSesion(
     return { error: CREDENCIALES };
   }
 
-  // La cuenta existe, pero debe administrar esta institución (tabla miembros).
-  if (!(await esMiembro(data.user.id, org.slug))) {
-    console.warn(`[ingreso] ${data.user.id} no es miembro de ${org.slug}`);
-    await auth.signOut();
-    return { error: "Tu cuenta no tiene acceso al panel de esta institución." };
-  }
+  // Toda cuenta existente entra (ver usuarioAdmin en lib/servidor/insforge).
   redirect(`/${org.slug}/admin`);
 }
 
