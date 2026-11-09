@@ -9,21 +9,20 @@ import { descargar } from "@/lib/pdf";
 import { etiquetaTipo } from "@/lib/tipos";
 import { armarZip, ZipCancelado } from "@/lib/zip";
 
-type Item = { id: string; nombre: string; tipo: string };
+export type ItemZip = { id: string; nombre: string; tipo: string };
 
 class SinSesion extends Error {}
 
-// Descarga masiva del panel: todos los certificados del listado (con los
-// filtros que estén aplicados) en un ZIP, una carpeta por tipo.
-export function BotonDescargarZip({
-  q,
-  tipo,
-  total,
-}: {
-  q: string;
-  tipo: string;
-  total: number;
-}) {
+// Descarga masiva del panel en un ZIP, una carpeta por tipo: los certificados
+// marcados ({ seleccion }) o todos los del listado con los filtros aplicados
+// ({ q, tipo, total }).
+export function BotonDescargarZip(
+  props: { seleccion: ItemZip[] } | { q: string; tipo: string; total: number },
+) {
+  const seleccion = "seleccion" in props ? props.seleccion : null;
+  const q = "q" in props ? props.q : "";
+  const tipo = "tipo" in props ? props.tipo : "";
+  const total = seleccion ? seleccion.length : "total" in props ? props.total : 0;
   const org = useOrganizacion();
   const [abierto, setAbierto] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -40,11 +39,16 @@ export function BotonDescargarZip({
     setHechos(0);
     setCantidad(0);
     try {
-      const parametros = new URLSearchParams({ q, tipo });
-      const respuesta = await fetch(`/api/${org.slug}/admin/certificados/lista?${parametros}`);
-      if (respuesta.status === 401) throw new SinSesion();
-      if (!respuesta.ok) throw new Error(`error ${respuesta.status}`);
-      const { certificados } = (await respuesta.json()) as { certificados: Item[] };
+      let certificados: ItemZip[];
+      if (seleccion) {
+        certificados = seleccion;
+      } else {
+        const parametros = new URLSearchParams({ q, tipo });
+        const respuesta = await fetch(`/api/${org.slug}/admin/certificados/lista?${parametros}`);
+        if (respuesta.status === 401) throw new SinSesion();
+        if (!respuesta.ok) throw new Error(`error ${respuesta.status}`);
+        ({ certificados } = (await respuesta.json()) as { certificados: ItemZip[] });
+      }
       setCantidad(certificados.length);
 
       const zip = await armarZip(
@@ -92,7 +96,7 @@ export function BotonDescargarZip({
         className="boton-secundario w-full sm:w-auto"
       >
         <FileArchive aria-hidden size={16} strokeWidth={1.75} />
-        Descargar ZIP
+        {seleccion ? `Descargar ${seleccion.length} en ZIP` : "Descargar ZIP"}
       </button>
       <Dialogo
         abierto={abierto}
@@ -100,9 +104,11 @@ export function BotonDescargarZip({
         bloquearCierre={ocupado}
         titulo="Descargar certificados en ZIP"
         descripcion={
-          filtrado
-            ? `Los ${total} certificado(s) que coinciden con la búsqueda actual.`
-            : `Los ${total} certificado(s) publicados.`
+          seleccion
+            ? `Los ${total} certificado(s) seleccionados.`
+            : filtrado
+              ? `Los ${total} certificado(s) que coinciden con la búsqueda actual.`
+              : `Los ${total} certificado(s) publicados.`
         }
         ancho="sm:max-w-xl"
       >

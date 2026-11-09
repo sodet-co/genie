@@ -1,21 +1,17 @@
-import { Download, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
-import { BotonGenerar } from "@/componentes/admin/boton-generar";
-import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
-import { Mensaje } from "@/componentes/generador/mensaje";
 import { notFound } from "next/navigation";
+import { BotonGenerar } from "@/componentes/admin/boton-generar";
+import { BotonDescargarZip } from "@/componentes/admin/descargar-zip";
+import { ListaCertificados } from "@/componentes/admin/lista-certificados";
+import { Mensaje } from "@/componentes/generador/mensaje";
 import { normalizarBusqueda } from "@/lib/busqueda";
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { etiquetaTipo, TIPOS } from "@/lib/tipos";
-import {
-  clienteAdmin,
-  TABLA,
-  type FilaCertificado,
-} from "@/lib/servidor/insforge";
+import { TIPOS } from "@/lib/tipos";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
-import { BotonDescargarZip } from "@/componentes/admin/descargar-zip";
+import { clienteAdmin, TABLA, type FilaCertificado } from "@/lib/servidor/insforge";
 
-const POR_PAGINA = 50;
+const POR_PAGINA = 20;
 
 type Fila = Pick<
   FilaCertificado,
@@ -37,6 +33,12 @@ const fecha = new Intl.DateTimeFormat("es-CO", {
   timeZone: "America/Bogota",
 });
 
+// Título y correos en una sola línea secundaria (la fila no crece).
+function detalle(f: Pick<Fila, "datos" | "correos">) {
+  const correos = f.correos?.length ? f.correos.join(", ") : "Sin correo";
+  return f.datos?.titulo ? `${f.datos.titulo} · ${correos}` : correos;
+}
+
 export default async function Certificados({
   params,
   searchParams,
@@ -51,17 +53,17 @@ export default async function Certificados({
     .database.from(TABLA)
     .select(
       "id, clave_original, nombre, tipo, datos, correos, descargas, ultima_descarga, actualizado_en",
-      {
-        count: "exact",
-      },
+      { count: "exact" },
     )
     .eq("organizacion", org.slug)
     .order("nombre")
+    .order("id")
     .range((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA - 1);
   const { data, count, error } = await aplicarFiltros(consulta, { q, tipo });
   const filas = (data ?? []) as Fila[];
   const total = count ?? 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const paginacion = { q, tipo, pagina, paginas, total, mostrados: filas.length };
 
   return (
     <div className="flex flex-col gap-6">
@@ -123,150 +125,76 @@ export default async function Certificados({
         </p>
       ) : (
         <>
-          {/* Celular: tarjetas */}
-          <ul className="flex flex-col divide-y divide-border rounded-md border border-border bg-surface-raised md:hidden">
-            {filas.map((f) => (
-              <li key={f.id} className="flex flex-col gap-2 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0 font-medium [overflow-wrap:anywhere]">
-                    {f.nombre}
-                  </p>
-                  <span className="shrink-0 rounded-sm bg-surface-sunken px-2 py-0.5 text-small text-ink-muted">
-                    {etiquetaTipo(f.tipo)}
-                  </span>
-                </div>
-                {f.datos?.titulo && (
-                  <p className="line-clamp-2 text-small text-ink-muted">{f.datos.titulo}</p>
-                )}
-                <p className="text-small text-ink-muted [overflow-wrap:anywhere]">
-                  {f.correos?.length ? f.correos.join(", ") : "Sin correo"}
-                </p>
-                <p className="text-small text-ink-muted">
-                  {f.descargas} descarga(s) · generado{" "}
-                  {fecha.format(new Date(f.actualizado_en))}
-                </p>
-                <div className="flex gap-2">
-                  <a
-                    href={`/api/${org.slug}/admin/certificados/${f.id}`}
-                    className="boton-secundario flex-1"
-                  >
-                    <Download aria-hidden size={16} strokeWidth={1.75} />
-                    PDF
-                  </a>
-                  <BotonEliminar id={f.id} nombre={f.nombre} comoBoton />
-                </div>
-              </li>
-            ))}
-          </ul>
-          {/* Pantallas grandes: tabla */}
-          <div className="hidden overflow-hidden rounded-md border border-border bg-surface-raised md:block">
-            <table className="w-full text-left">
-              <thead className="border-b border-border bg-surface-sunken text-label uppercase text-ink-muted">
-                <tr>
-                  <th className="px-3 py-2.5 font-medium">Nombre</th>
-                  <th className="px-3 py-2.5 font-medium">Tipo</th>
-                  <th className="px-3 py-2.5 text-right font-medium">
-                    Descargas
-                  </th>
-                  <th className="hidden px-3 py-2.5 font-medium lg:table-cell">
-                    Generado
-                  </th>
-                  <th className="px-3 py-2.5" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filas.map((f) => (
-                  <tr key={f.id}>
-                    {/* w-full + max-w-0: el nombre usa el espacio que sobra y se
-                        corta con "…" en vez de ensanchar la tabla. */}
-                    <td className="w-full max-w-0 px-3 py-2.5">
-                      <span
-                        className="block truncate font-medium"
-                        title={f.nombre}
-                      >
-                        {f.nombre}
-                      </span>
-                      {normalizarBusqueda(f.clave_original) !==
-                        normalizarBusqueda(f.nombre) && (
-                        <span className="block truncate text-small text-ink-muted">
-                          Clave: {f.clave_original}
-                        </span>
-                      )}
-                      {f.datos?.titulo && (
-                        <span
-                          className="block truncate text-small text-ink-muted"
-                          title={f.datos.titulo}
-                        >
-                          {f.datos.titulo}
-                        </span>
-                      )}
-                      <span className="block truncate text-small text-ink-muted">
-                        {f.correos?.length ? f.correos.join(", ") : "Sin correo"}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5">
-                      {etiquetaTipo(f.tipo)}
-                    </td>
-                    <td
-                      className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums"
-                      title={
-                        f.ultima_descarga
-                          ? `Última descarga: ${fecha.format(new Date(f.ultima_descarga))}`
-                          : "Aún no se ha descargado"
-                      }
-                    >
-                      {f.descargas}
-                    </td>
-                    <td className="hidden whitespace-nowrap px-3 py-2.5 text-ink-muted lg:table-cell">
-                      {fecha.format(new Date(f.actualizado_en))}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right">
-                      <div className="flex justify-end gap-1">
-                        <a
-                          href={`/api/${org.slug}/admin/certificados/${f.id}`}
-                          aria-label="Descargar PDF"
-                          data-tooltip="Descargar PDF"
-                          className="boton-icono con-tooltip"
-                        >
-                          <Download aria-hidden size={16} strokeWidth={1.75} />
-                        </a>
-                        <BotonEliminar id={f.id} nombre={f.nombre} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Paginacion {...paginacion} />
+          <ListaCertificados
+            filas={filas.map((f) => ({
+              id: f.id,
+              nombre: f.nombre,
+              tipo: f.tipo,
+              clave:
+                normalizarBusqueda(f.clave_original) !== normalizarBusqueda(f.nombre)
+                  ? f.clave_original
+                  : "",
+              detalle: detalle(f),
+              descargas: f.descargas,
+              ultimaDescarga: f.ultima_descarga ? fecha.format(new Date(f.ultima_descarga)) : "",
+              generado: fecha.format(new Date(f.actualizado_en)),
+            }))}
+          />
+          <Paginacion {...paginacion} />
         </>
       )}
+    </div>
+  );
+}
 
+// Arriba y abajo del listado: "21–40 de 253" con Anterior / Siguiente.
+function Paginacion({
+  q,
+  tipo,
+  pagina,
+  paginas,
+  total,
+  mostrados,
+}: {
+  q: string;
+  tipo: string;
+  pagina: number;
+  paginas: number;
+  total: number;
+  mostrados: number;
+}) {
+  const desde = (pagina - 1) * POR_PAGINA + 1;
+  const hasta = desde + mostrados - 1;
+  return (
+    <nav
+      className="flex flex-wrap items-center justify-between gap-3 text-small"
+      aria-label="Paginación"
+    >
+      <span className="text-ink-muted">
+        {mostrados > 0 ? `${desde}–${hasta} de ${total}` : `0 de ${total}`}
+      </span>
       {paginas > 1 && (
-        <nav
-          className="flex items-center gap-4 text-small"
-          aria-label="Paginación"
-        >
-          {pagina > 1 && (
-            <Link
-              className="enlace"
-              href={{ query: { q, tipo, pagina: pagina - 1 } }}
-            >
+        <span className="flex items-center gap-4">
+          {pagina > 1 ? (
+            <Link className="enlace" href={{ query: { q, tipo, pagina: pagina - 1 } }}>
               Anterior
             </Link>
+          ) : (
+            <span className="text-ink-muted opacity-50">Anterior</span>
           )}
           <span className="text-ink-muted">
             Página {pagina} de {paginas}
           </span>
-          {pagina < paginas && (
-            <Link
-              className="enlace"
-              href={{ query: { q, tipo, pagina: pagina + 1 } }}
-            >
+          {pagina < paginas ? (
+            <Link className="enlace" href={{ query: { q, tipo, pagina: pagina + 1 } }}>
               Siguiente
             </Link>
+          ) : (
+            <span className="text-ink-muted opacity-50">Siguiente</span>
           )}
-        </nav>
+        </span>
       )}
-    </div>
+    </nav>
   );
 }
