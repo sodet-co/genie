@@ -11,10 +11,11 @@ export type CertificadoRegenerable = {
   tipo: string;
   plantilla: string | null;
   datos: Record<string, string>;
+  correos: string[];
 };
 
 // Vuelve a generar certificados ya publicados con la plantilla actual y los
-// datos guardados. Cada uno reemplaza al anterior (misma clave).
+// datos guardados. Cada uno reemplaza al anterior (misma clave, tipo y título).
 export async function regenerar(
   org: Organizacion,
   certificados: CertificadoRegenerable[],
@@ -41,6 +42,7 @@ export async function regenerar(
       plantilla: c.plantilla!,
       clave: c.clave_original,
       nombre: c.nombre,
+      correos: c.correos ?? [],
     });
   });
 

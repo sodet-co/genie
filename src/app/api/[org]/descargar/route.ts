@@ -1,63 +1,89 @@
-import { LARGO_MAXIMO_CLAVE, normalizarBusqueda } from "@/lib/busqueda";
+import JSZip from "jszip";
+import { nombreSeguro } from "@/lib/plantilla";
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { BUCKET, clienteAdmin, TABLA } from "@/lib/servidor/insforge";
+import { BUCKET, clienteAdmin } from "@/lib/servidor/insforge";
 import { ipDe, permitir } from "@/lib/servidor/limite";
-import { etiquetaTipo } from "@/lib/tipos";
-import { respuestaPdf } from "@/lib/servidor/respuesta-pdf";
-
-const NO_ENCONTRADO =
-  "No encontramos un certificado con esos datos. Revisa que estén escritos igual que en tu inscripción.";
+import {
+  buscarCertificados,
+  contarDescargas,
+  leerBusqueda,
+  NO_ENCONTRADO,
+  nombreArchivo,
+  type CertificadoPortal,
+} from "@/lib/servidor/portal";
+import { respuestaArchivo, respuestaPdf } from "@/lib/servidor/respuesta-pdf";
 
 function error(estado: number, mensaje: string) {
   return Response.json({ error: mensaje }, { status: estado });
 }
 
-// Portal público: busca un certificado YA generado y lo devuelve. Nunca genera
-// uno nuevo. Si no existe, responde siempre el mismo mensaje genérico.
-// Solo busca dentro de la organización de la ruta (/api/ua/descargar).
+async function leerPdf(c: CertificadoPortal) {
+  const { data, error } = await clienteAdmin().storage.from(BUCKET).download(c.archivo_key);
+  if (error || !data) throw error ?? new Error(`Sin archivo: ${c.archivo_key}`);
+  return data;
+}
+
+// Portal público: entrega un certificado ya generado ({ id }) o todos los de
+// la persona en un ZIP ({ todos: true }). Repite la búsqueda en cada petición:
+// solo se descarga lo que corresponde al correo (o nombre) enviado.
 export async function POST(request: Request, ctx: RouteContext<"/api/[org]/descargar">) {
   const org = buscarOrganizacion((await ctx.params).org);
-  if (!org) return error(404, NO_ENCONTRADO);
-  if (!permitir(`descarga:${org.slug}:${ipDe(request)}`, 20, 10 * 60_000)) {
+  if (!org) return error(404, NO_ENCONTRADO.correo);
+  if (!permitir(`descargar:${org.slug}:${ipDe(request)}`, 60, 10 * 60_000)) {
     return error(429, "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.");
   }
 
-  let original = "";
+  const cuerpo = await request.json().catch(() => null);
+  const busqueda = leerBusqueda(cuerpo);
+  if (!busqueda) return error(404, NO_ENCONTRADO.nombre);
+
+  let certificados: CertificadoPortal[];
   try {
-    const cuerpo = await request.json();
-    original = typeof cuerpo?.clave === "string" ? cuerpo.clave : "";
-  } catch {
-    return error(400, "Solicitud inválida.");
-  }
-  const clave = normalizarBusqueda(original);
-  if (!clave || original.length > LARGO_MAXIMO_CLAVE) return error(404, NO_ENCONTRADO);
-
-  const db = clienteAdmin();
-  const { data: fila, error: errorConsulta } = await db.database
-    .from(TABLA)
-    .select("id, nombre, tipo, archivo_key, descargas")
-    .eq("organizacion", org.slug)
-    .eq("clave", clave)
-    .maybeSingle();
-  if (errorConsulta) {
-    console.error(errorConsulta);
-    return error(500, "No pudimos consultar el certificado. Inténtalo más tarde.");
-  }
-  if (!fila) return error(404, NO_ENCONTRADO);
-
-  const { data: pdf, error: errorDescarga } = await db.storage
-    .from(BUCKET)
-    .download(fila.archivo_key);
-  if (errorDescarga || !pdf) {
-    console.error(errorDescarga);
-    return error(404, NO_ENCONTRADO);
+    certificados = await buscarCertificados(org, busqueda);
+  } catch (e) {
+    console.error(e);
+    return error(500, "No pudimos consultar los certificados. Inténtalo más tarde.");
   }
 
-  const { error: errorConteo } = await db.database
-    .from(TABLA)
-    .update({ descargas: fila.descargas + 1, ultima_descarga: new Date().toISOString() })
-    .eq("id", fila.id);
-  if (errorConteo) console.error(errorConteo);
+  try {
+    if (cuerpo?.todos === true) {
+      if (certificados.length === 0) return error(404, NO_ENCONTRADO[busqueda.por]);
+      const zip = new JSZip();
+      const usados = new Set<string>();
+      for (const c of certificados) {
+        // Dos certificados del mismo tipo (dos ponencias): "(2)", "(3)"…
+        const base = nombreSeguro(nombreArchivo(c));
+        let nombre = base;
+        for (let n = 2; usados.has(nombre); n++) nombre = `${base} (${n})`;
+        usados.add(nombre);
+        zip.file(`${nombre}.pdf`, await (await leerPdf(c)).arrayBuffer());
+      }
+      const datos = await zip.generateAsync({ type: "uint8array" });
+      await contarDescargas(certificados);
+      return respuestaArchivo(
+        new Blob([datos as Uint8Array<ArrayBuffer>], { type: "application/zip" }),
+        // Un correo compartido puede traer certificados de dos personas.
+        `${nombreSeguro(
+          new Set(certificados.map((c) => c.nombre)).size === 1
+            ? `Certificados - ${certificados[0].nombre}`
+            : "Certificados",
+        )}.zip`,
+        "application/zip",
+      );
+    }
 
-  return respuestaPdf(pdf, `Certificado ${etiquetaTipo(fila.tipo).toLowerCase()} - ${fila.nombre}`);
+    const elegido =
+      typeof cuerpo?.id === "string"
+        ? certificados.find((c) => c.id === cuerpo.id)
+        : certificados.length === 1
+          ? certificados[0]
+          : undefined;
+    if (!elegido) return error(404, NO_ENCONTRADO[busqueda.por]);
+    const pdf = await leerPdf(elegido);
+    await contarDescargas([elegido]);
+    return respuestaPdf(pdf, nombreArchivo(elegido));
+  } catch (e) {
+    console.error(e);
+    return error(500, "No pudimos preparar la descarga. Inténtalo más tarde.");
+  }
 }

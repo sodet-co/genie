@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { normalizarBusqueda } from "./busqueda";
+import { MAXIMO_CORREOS, normalizarBusqueda, separarCorreos } from "./busqueda";
 import { decodificarTexto } from "./excel";
 import { normalizarClave } from "./plantilla";
 import { plantillaPorTipo, type Organizacion } from "./organizaciones";
@@ -11,7 +11,21 @@ export type PersonaEvento = {
   // Texto tal como venía en el Excel, para mostrar el error si no es válido.
   tipoOriginal: string;
   titulo: string;
+  // Correos para descargar en el portal (opcional; varios separados por ;).
+  correos: string[];
+  correosInvalidos: string[];
 };
+
+// Columnas aceptadas para el correo (normalizadas con normalizarClave).
+const COLUMNAS_CORREO = ["correo", "correos", "correo_electronico", "email", "e_mail"];
+
+export function personaConCorreos(
+  persona: Omit<PersonaEvento, "correos" | "correosInvalidos">,
+  textoCorreos: string,
+): PersonaEvento {
+  const { validos, invalidos } = separarCorreos(textoCorreos);
+  return { ...persona, correos: validos, correosInvalidos: invalidos };
+}
 
 export function tipoDesdeTexto(texto: string): TipoCertificado | "" {
   const n = normalizarBusqueda(texto);
@@ -42,6 +56,7 @@ export async function leerExcelEvento(archivo: File) {
   const columnas = filas[0].map((c) => normalizarClave(String(c)));
   const indice = (nombre: string) => columnas.indexOf(nombre);
   const [iNombre, iTipo, iTitulo] = [indice("nombre"), indice("tipo"), indice("titulo")];
+  const iCorreo = columnas.findIndex((c) => COLUMNAS_CORREO.includes(c));
   const faltan = [
     iNombre < 0 && "Nombre",
     iTipo < 0 && "Tipo",
@@ -51,20 +66,26 @@ export async function leerExcelEvento(archivo: File) {
   const texto = (fila: string[], i: number) => (i < 0 ? "" : String(fila[i] ?? "").trim());
   const personas: PersonaEvento[] = filas
     .slice(1)
-    .map((fila) => ({
-      nombre: texto(fila, iNombre).replace(/\s+/g, " "),
-      tipoOriginal: texto(fila, iTipo),
-      tipo: tipoDesdeTexto(texto(fila, iTipo)),
-      titulo: texto(fila, iTitulo).replace(/\s+/g, " "),
-    }))
-    .filter((p) => p.nombre || p.tipoOriginal || p.titulo);
+    .map((fila) =>
+      personaConCorreos(
+        {
+          nombre: texto(fila, iNombre).replace(/\s+/g, " "),
+          tipoOriginal: texto(fila, iTipo),
+          tipo: tipoDesdeTexto(texto(fila, iTipo)),
+          titulo: texto(fila, iTitulo).replace(/\s+/g, " "),
+        },
+        texto(fila, iCorreo),
+      ),
+    )
+    .filter((p) => p.nombre || p.tipoOriginal || p.titulo || p.correos.length);
   return { personas, faltan };
 }
 
 export type ProblemaPersona = { fila: number; motivo: string };
 
-// Una persona = un certificado: nombre obligatorio y sin repetir, tipo de la
-// lista y título cuando la plantilla lo usa.
+// Una fila = un certificado. Una persona puede tener varios (otra ponencia u
+// otro tipo), pero no dos con el mismo nombre, tipo y título. Tipo de la lista,
+// título cuando la plantilla lo usa y correos con formato válido.
 export function revisarPersonas(personas: PersonaEvento[], org: Organizacion) {
   const problemas: ProblemaPersona[] = [];
   const vistos = new Map<string, number>();
@@ -73,6 +94,11 @@ export function revisarPersonas(personas: PersonaEvento[], org: Organizacion) {
     const motivos: string[] = [];
     const clave = normalizarBusqueda(p.nombre);
     if (!clave) motivos.push("falta el nombre");
+    if (p.correosInvalidos.length) {
+      motivos.push(`correo inválido: ${p.correosInvalidos.join(", ")}`);
+    } else if (p.correos.length > MAXIMO_CORREOS) {
+      motivos.push(`más de ${MAXIMO_CORREOS} correos`);
+    }
     if (!p.tipo) {
       motivos.push(p.tipoOriginal ? `el tipo "${p.tipoOriginal}" no es válido` : "falta el tipo");
     } else if (!plantillaPorTipo(org, p.tipo)) {
@@ -80,10 +106,12 @@ export function revisarPersonas(personas: PersonaEvento[], org: Organizacion) {
     } else if (plantillaPorTipo(org, p.tipo)?.marcadores.includes("titulo") && !p.titulo) {
       motivos.push("falta el título");
     }
-    if (clave) {
-      const anterior = vistos.get(clave);
-      if (anterior !== undefined) motivos.push(`el nombre se repite (igual que la fila ${anterior})`);
-      else vistos.set(clave, fila);
+    if (clave && p.tipo) {
+      const identidad = `${clave}|${p.tipo}|${normalizarBusqueda(p.titulo)}`;
+      const anterior = vistos.get(identidad);
+      if (anterior !== undefined) {
+        motivos.push(`repetida: mismo nombre, tipo y título que la fila ${anterior}`);
+      } else vistos.set(identidad, fila);
     }
     if (motivos.length) problemas.push({ fila, motivo: motivos.join(", ") });
   });

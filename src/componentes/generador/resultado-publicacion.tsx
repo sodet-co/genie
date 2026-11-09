@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { ResultadoPublicacion } from "@/lib/generar";
-import { etiquetaTipo } from "@/lib/tipos";
 import { useOrganizacion } from "@/componentes/organizacion";
 import { Mensaje } from "./mensaje";
 
@@ -38,7 +37,6 @@ export function ResumenPublicacion({
   resultado: ResultadoPublicacion;
   conEnlace?: boolean;
 }) {
-  const { cambiosTipo } = resultado;
   const org = useOrganizacion();
   return (
     <div className="flex flex-col gap-2">
@@ -53,17 +51,6 @@ export function ResumenPublicacion({
           </>
         )}
       </Mensaje>
-      {cambiosTipo.length > 0 && (
-        <Mensaje tipo="aviso">
-          {cambiosTipo.length} persona(s) tenían un certificado de otro tipo y se
-          reemplazó:{" "}
-          {cambiosTipo
-            .slice(0, VISIBLES)
-            .map((c) => `fila ${c.fila} (antes ${etiquetaTipo(c.tipoAnterior).toLowerCase()})`)
-            .join(", ")}
-          {cambiosTipo.length > VISIBLES && "…"}
-        </Mensaje>
-      )}
       <ListaProblemas
         titulo={`${resultado.fallidos.length} no se publicaron:`}
         problemas={resultado.fallidos}

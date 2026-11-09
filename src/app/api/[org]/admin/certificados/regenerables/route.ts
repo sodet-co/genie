@@ -15,7 +15,7 @@ export async function GET(
   }
   const { data, error } = await clienteAdmin()
     .database.from(TABLA)
-    .select("id, clave_original, nombre, tipo, plantilla, datos")
+    .select("id, clave_original, nombre, tipo, plantilla, datos, correos")
     .eq("organizacion", org.slug)
     .not("plantilla", "is", null)
     .order("nombre")

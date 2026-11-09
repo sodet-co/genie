@@ -28,10 +28,10 @@ export default async function Portal({ params }: PageProps<"/[org]">) {
           <h1 className="text-h1 font-semibold">Descarga tu certificado</h1>
           <p className="mt-2 text-ink-muted">
             Certificado de participación en{" "}
-            <strong className="text-ink">{org.evento.nombre}</strong>. Escribe tu{" "}
-            {org.etiquetaBusqueda.toLowerCase()} tal como lo registraste.
+            <strong className="text-ink">{org.evento.nombre}</strong>. Escribe
+            el correo que registraste en el evento.
           </p>
-          <FormularioDescarga etiqueta={org.etiquetaBusqueda} />
+          <FormularioDescarga />
         </div>
       </main>
     </>

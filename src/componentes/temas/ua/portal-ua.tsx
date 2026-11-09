@@ -23,10 +23,9 @@ export function PortalUA({ org }: { org: Organizacion }) {
       <section className={`${TARJETA_UA} max-w-md`}>
         <h1 className={TITULO_UA}>Descargar tu certificado</h1>
         <p className="mt-2 text-ink">
-          {org.evento.nombre}. Escribe tu {org.etiquetaBusqueda.toLowerCase()} tal como lo
-          registraste.
+          {org.evento.nombre}. Escribe el correo que registraste en el evento.
         </p>
-        <FormularioDescarga etiqueta={org.etiquetaBusqueda} />
+        <FormularioDescarga />
       </section>
     </MarcoUA>
   );

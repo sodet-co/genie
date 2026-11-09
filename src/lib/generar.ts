@@ -83,7 +83,7 @@ export async function generarIndividual(
 export type ProblemaRegistro = { fila: number; motivo: string };
 
 // Antes de publicar: toda fila necesita clave y no puede haber dos con la
-// misma clave (la segunda reemplazaría a la primera).
+// misma clave y el mismo título (la segunda reemplazaría a la primera).
 export function revisarClaves(registros: Registro[], campoClave: string) {
   const problemas: ProblemaRegistro[] = [];
   const vistas = new Map<string, number>();
@@ -93,14 +93,15 @@ export function revisarClaves(registros: Registro[], campoClave: string) {
       problemas.push({ fila: i + 1, motivo: `"${campoClave}" está vacío` });
       return;
     }
-    const anterior = vistas.get(clave);
+    const identidad = `${clave}|${normalizarBusqueda(registro.titulo ?? "")}`;
+    const anterior = vistas.get(identidad);
     if (anterior !== undefined) {
       problemas.push({
         fila: i + 1,
         motivo: `"${registro[campoClave]}" se repite (igual que la fila ${anterior})`,
       });
     } else {
-      vistas.set(clave, i + 1);
+      vistas.set(identidad, i + 1);
     }
   });
   return problemas;
@@ -109,8 +110,6 @@ export function revisarClaves(registros: Registro[], campoClave: string) {
 export type ResultadoPublicacion = {
   nuevos: number;
   reemplazados: number;
-  // Personas que ya tenían un certificado de otro tipo (se reemplazó).
-  cambiosTipo: { fila: number; tipoAnterior: string }[];
   fallidos: ProblemaRegistro[];
 };
 
@@ -127,6 +126,8 @@ export type ItemPublicacion = {
   // Al regenerar se usan la clave y el nombre guardados, no los del registro.
   clave?: string;
   nombre?: string;
+  // Correos con los que la persona lo descarga en el portal.
+  correos?: string[];
 };
 
 // Genera cada PDF en el navegador y lo sube al servidor, que lo guarda y lo
@@ -145,7 +146,6 @@ export async function publicarLote(
   const resultado: ResultadoPublicacion = {
     nuevos: 0,
     reemplazados: 0,
-    cambiosTipo: [],
     fallidos: [],
   };
   const renderizador = new Renderizador(opciones.pagina);
@@ -153,7 +153,7 @@ export async function publicarLote(
   try {
     for (let i = 0; i < items.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const { registro, html, tipo, fila, plantilla, clave, nombre } = items[i];
+      const { registro, html, tipo, fila, plantilla, clave, nombre, correos } = items[i];
       try {
         const pdf = await generarPdf(
           renderizador,
@@ -177,6 +177,7 @@ export async function publicarLote(
         );
         formulario.set("tipo", tipo);
         if (plantilla) formulario.set("plantilla", plantilla);
+        if (correos?.length) formulario.set("correos", correos.join(";"));
         formulario.set("datos", JSON.stringify(registro));
 
         const respuesta = await fetch(`/api/${opciones.organizacion}/admin/certificados`, {
@@ -192,12 +193,6 @@ export async function publicarLote(
           });
         } else if (cuerpo?.reemplazado) {
           resultado.reemplazados++;
-          if (cuerpo.tipoAnterior) {
-            resultado.cambiosTipo.push({
-              fila,
-              tipoAnterior: cuerpo.tipoAnterior,
-            });
-          }
         } else {
           resultado.nuevos++;
         }

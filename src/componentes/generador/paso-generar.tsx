@@ -154,8 +154,8 @@ export function PasoGenerar(props: Props) {
       </div>
 
       <Mensaje tipo="aviso">
-        Cada persona tiene un solo certificado: si ya existe uno con la misma
-        clave (de cualquier tipo), se reemplaza por el nuevo.
+        Si ya existe un certificado del mismo tipo con la misma clave y el
+        mismo título, se reemplaza por el nuevo.
       </Mensaje>
 
       <ListaProblemas

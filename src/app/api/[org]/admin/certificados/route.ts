@@ -1,4 +1,10 @@
-import { LARGO_MAXIMO_CLAVE, normalizarBusqueda } from "@/lib/busqueda";
+import {
+  LARGO_MAXIMO_CLAVE,
+  MAXIMO_CORREOS,
+  normalizarBusqueda,
+  referenciaCertificado,
+  separarCorreos,
+} from "@/lib/busqueda";
 import { buscarOrganizacion, plantillaPorId } from "@/lib/organizaciones";
 import { esTipo } from "@/lib/tipos";
 import {
@@ -14,7 +20,7 @@ function error(estado: number, mensaje: string) {
   return Response.json({ error: mensaje }, { status: estado });
 }
 
-// Publica (o reemplaza) el PDF de una persona. Lo llama el generador del panel
+// Publica (o reemplaza) un certificado de una persona. Lo llama el generador del panel
 // después de crear cada PDF en el navegador.
 export async function POST(
   request: Request,
@@ -54,12 +60,23 @@ export async function POST(
     return error(400, "Datos inválidos.");
   }
 
+  // Correos con los que la persona lo descarga en el portal (puede no tener).
+  const { validos: correos, invalidos } = separarCorreos(
+    String(formulario.get("correos") ?? ""),
+  );
+  if (invalidos.length) return error(400, `Correo inválido: ${invalidos.join(", ")}`);
+  if (correos.length > MAXIMO_CORREOS) return error(400, "Demasiados correos.");
+
+  // Misma persona, tipo y título = mismo certificado: se reemplaza.
+  const referencia = referenciaCertificado(tipo, String(datos.titulo ?? ""));
+
   const db = clienteAdmin();
   const { data: existente, error: errorConsulta } = await db.database
     .from(TABLA)
-    .select("id, archivo_key, tipo")
+    .select("id, archivo_key")
     .eq("organizacion", org.slug)
     .eq("clave", clave)
+    .eq("referencia", referencia)
     .maybeSingle();
   if (errorConsulta) {
     console.error(errorConsulta);
@@ -83,6 +100,8 @@ export async function POST(
     clave_original: claveOriginal,
     nombre,
     tipo,
+    referencia,
+    correos,
     plantilla,
     datos,
     archivo_key: archivoKey,
@@ -99,9 +118,5 @@ export async function POST(
     return error(500, "No se pudo registrar el certificado.");
   }
 
-  // Un certificado por persona: si ya tenía uno (de cualquier tipo), se reemplaza.
-  return Response.json({
-    reemplazado: Boolean(existente),
-    tipoAnterior: existente && existente.tipo !== tipo ? existente.tipo : null,
-  });
+  return Response.json({ reemplazado: Boolean(existente) });
 }

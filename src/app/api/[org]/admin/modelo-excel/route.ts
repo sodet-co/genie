@@ -18,6 +18,7 @@ export async function GET(_: Request, ctx: RouteContext<"/api/[org]/admin/modelo
     { header: "Nombre", key: "nombre", width: 42 },
     { header: "Tipo", key: "tipo", width: 24 },
     { header: "Título", key: "titulo", width: 70 },
+    { header: "Correo", key: "correo", width: 36 },
   ];
   const encabezado = hoja.getRow(1);
   encabezado.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -26,6 +27,7 @@ export async function GET(_: Request, ctx: RouteContext<"/api/[org]/admin/modelo
   // Solo los tipos para los que la organización tiene plantilla.
   const etiquetas = org.evento.plantillas.map((p) => etiquetaTipo(p.tipo));
   const lista = `"${etiquetas.join(",")}"`;
+  hoja.getColumn("correo").numFmt = "@";
   for (let fila = 2; fila <= FILAS_CON_LISTA + 1; fila++) {
     hoja.getCell(`B${fila}`).dataValidation = {
       type: "list",
@@ -42,10 +44,12 @@ export async function GET(_: Request, ctx: RouteContext<"/api/[org]/admin/modelo
   [
     `${org.nombre} · ${org.evento.nombre}`,
     "",
-    "Una fila por persona. Cada persona recibe un solo certificado.",
-    "Nombre: tal como debe salir en el certificado. Es también lo que la persona escribe para descargarlo.",
+    "Una fila por certificado. Si una persona tiene varios (dos ponencias, o coordinadora y ponente), va en varias filas con el mismo nombre.",
+    "Nombre: tal como debe salir en el certificado.",
     `Tipo: elígelo de la lista (${etiquetas.join(", ")}).`,
     "Título: obligatorio para Ponente, Conferencista y Coordinador de mesa (título de la ponencia, conferencia o mesa). Vacío para Asistente.",
+    "Correo: el correo registrado. La persona lo escribe en la página para descargar sus certificados. Si tiene varios, sepáralos con punto y coma (;): cualquiera de ellos sirve.",
+    "Si una persona no tiene correo, deja la celda vacía: en ese caso descarga su certificado escribiendo su nombre completo.",
   ].forEach((texto, i) => {
     const celda = ayuda.getCell(`A${i + 1}`);
     celda.value = texto;

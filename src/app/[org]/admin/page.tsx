@@ -27,6 +27,7 @@ type Fila = Pick<
   | "tipo"
   | "plantilla"
   | "datos"
+  | "correos"
   | "descargas"
   | "ultima_descarga"
   | "actualizado_en"
@@ -53,7 +54,7 @@ export default async function Certificados({
   let consulta = clienteAdmin()
     .database.from(TABLA)
     .select(
-      "id, clave_original, nombre, tipo, plantilla, datos, descargas, ultima_descarga, actualizado_en",
+      "id, clave_original, nombre, tipo, plantilla, datos, correos, descargas, ultima_descarga, actualizado_en",
       {
         count: "exact",
       },
@@ -61,9 +62,13 @@ export default async function Certificados({
     .eq("organizacion", org.slug)
     .order("nombre")
     .range((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA - 1);
-  // Comas, paréntesis y comodines romperían el filtro `or` de PostgREST.
-  const termino = q.replace(/[,()*%\\]/g, " ").trim();
-  if (termino) {
+  // Comas, paréntesis, llaves, comillas y comodines romperían el filtro `or`
+  // de PostgREST.
+  const termino = q.replace(/[,()*%\\{}"]/g, " ").trim();
+  if (termino.includes("@")) {
+    // Un correo: coincidencia exacta con uno de los registrados.
+    consulta = consulta.contains("correos", [termino.toLowerCase()]);
+  } else if (termino) {
     consulta = consulta.or(
       `nombre.ilike.*${termino}*,clave_original.ilike.*${termino}*`,
     );
@@ -97,7 +102,7 @@ export default async function Certificados({
         <input
           name="q"
           defaultValue={q}
-          placeholder="Buscar por nombre o clave"
+          placeholder="Buscar por nombre o correo"
           aria-label="Buscar"
           className="campo col-span-2 sm:max-w-sm sm:flex-1"
         />
@@ -146,6 +151,12 @@ export default async function Certificados({
                     {etiquetaTipo(f.tipo)}
                   </span>
                 </div>
+                {f.datos?.titulo && (
+                  <p className="line-clamp-2 text-small text-ink-muted">{f.datos.titulo}</p>
+                )}
+                <p className="text-small text-ink-muted [overflow-wrap:anywhere]">
+                  {f.correos?.length ? f.correos.join(", ") : "Sin correo"}
+                </p>
                 <p className="text-small text-ink-muted">
                   {f.descargas} descarga(s) · generado{" "}
                   {fecha.format(new Date(f.actualizado_en))}
@@ -198,6 +209,17 @@ export default async function Certificados({
                           Clave: {f.clave_original}
                         </span>
                       )}
+                      {f.datos?.titulo && (
+                        <span
+                          className="block truncate text-small text-ink-muted"
+                          title={f.datos.titulo}
+                        >
+                          {f.datos.titulo}
+                        </span>
+                      )}
+                      <span className="block truncate text-small text-ink-muted">
+                        {f.correos?.length ? f.correos.join(", ") : "Sin correo"}
+                      </span>
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5">
                       {etiquetaTipo(f.tipo)}

@@ -64,6 +64,8 @@ export type FilaCertificado = {
   clave_original: string;
   nombre: string;
   tipo: string;
+  referencia: string;
+  correos: string[];
   organizacion: string;
   plantilla: string | null;
   datos: Record<string, string>;

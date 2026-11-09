@@ -20,9 +20,11 @@ import {
 import { VistaPrevia } from "@/componentes/generador/vista-previa";
 import {
   leerExcelEvento,
+  personaConCorreos,
   revisarPersonas,
   type PersonaEvento,
 } from "@/lib/excel-evento";
+import { normalizarBusqueda } from "@/lib/busqueda";
 import {
   Cancelado,
   publicarLote,
@@ -44,6 +46,19 @@ const usaTitulo = (org: Organizacion, tipo: TipoCertificado | "") =>
   plantillaPorTipo(org, tipo)?.marcadores.includes("titulo") ?? false;
 
 type Plantillas = Partial<Record<TipoCertificado, Plantilla>>;
+
+// Las filas con el mismo nombre son la misma persona: cada certificado suyo
+// guarda todos sus correos, para que cualquiera de ellos los muestre todos.
+function correosPorPersona(personas: PersonaEvento[]) {
+  const mapa = new Map<string, string[]>();
+  for (const p of personas) {
+    const clave = normalizarBusqueda(p.nombre);
+    const lista = mapa.get(clave) ?? [];
+    for (const c of p.correos) if (!lista.includes(c)) lista.push(c);
+    mapa.set(clave, lista);
+  }
+  return mapa;
+}
 
 // Carga del evento actual dentro del popup de "Generar certificados": un Excel
 // con Nombre, Tipo (lista desplegable) y Título, o personas una por una. Cada
@@ -213,9 +228,10 @@ function CargaExcel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-ink-muted">
-        El modelo tiene tres columnas: <strong>Nombre</strong>,{" "}
-        <strong>Tipo</strong> (lista desplegable) y <strong>Título</strong>{" "}
-        (solo para ponente, conferencista y coordinador de mesa).
+        Una fila por certificado: <strong>Nombre</strong>,{" "}
+        <strong>Tipo</strong> (lista desplegable), <strong>Título</strong>{" "}
+        (solo para ponente, conferencista y coordinador de mesa) y{" "}
+        <strong>Correo</strong> (opcional; varios separados por punto y coma).
       </p>
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
         <a
@@ -253,15 +269,20 @@ function FormularioPersona({
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoCertificado | "">("");
   const [titulo, setTitulo] = useState("");
+  const [correo, setCorreo] = useState("");
   const org = useOrganizacion();
   const conTitulo = usaTitulo(org, tipo);
 
-  const persona = (): PersonaEvento => ({
-    nombre: nombre.trim().replace(/\s+/g, " "),
-    tipo,
-    tipoOriginal: tipo ? etiquetaTipo(tipo) : "",
-    titulo: conTitulo ? titulo.trim().replace(/\s+/g, " ") : "",
-  });
+  const persona = (): PersonaEvento =>
+    personaConCorreos(
+      {
+        nombre: nombre.trim().replace(/\s+/g, " "),
+        tipo,
+        tipoOriginal: tipo ? etiquetaTipo(tipo) : "",
+        titulo: conTitulo ? titulo.trim().replace(/\s+/g, " ") : "",
+      },
+      correo,
+    );
 
   return (
     <form
@@ -270,6 +291,7 @@ function FormularioPersona({
         onAgregar(persona());
         setNombre("");
         setTitulo("");
+        setCorreo("");
       }}
       className="flex flex-col gap-4"
     >
@@ -311,6 +333,22 @@ function FormularioPersona({
             />
           </label>
         )}
+        <label className="etiqueta sm:col-span-2">
+          Correo (opcional)
+          <input
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+            type="text"
+            inputMode="email"
+            autoComplete="off"
+            placeholder="nombre@correo.com"
+            className="campo"
+          />
+          <span className="text-small font-normal text-ink-muted">
+            Con correo, la persona descarga escribiéndolo. Sin correo, con su
+            nombre completo. Si tiene varios, sepáralos con punto y coma.
+          </span>
+        </label>
       </div>
       <div className="flex flex-wrap gap-3">
         <button type="submit" className="boton-primario">
@@ -424,6 +462,9 @@ function TablaPersonas({
               {p.titulo && (
                 <p className="text-small text-ink-muted">{p.titulo}</p>
               )}
+              <p className="text-small text-ink-muted [overflow-wrap:anywhere]">
+                {p.correos.length ? p.correos.join(", ") : "Sin correo"}
+              </p>
               {problema && <p className="text-small text-danger">{problema}</p>}
               <div className="mt-1 flex gap-2">
                 <button
@@ -455,6 +496,7 @@ function TablaPersonas({
               <th className="px-3 py-2.5 font-medium">Nombre</th>
               <th className="px-3 py-2.5 font-medium">Tipo</th>
               <th className="px-3 py-2.5 font-medium">Título</th>
+              <th className="px-3 py-2.5 font-medium">Correo</th>
               <th className="px-3 py-2.5" />
             </tr>
           </thead>
@@ -485,6 +527,12 @@ function TablaPersonas({
                   </td>
                   <td className="max-w-72 truncate px-3 py-2.5 align-top text-ink-muted">
                     {p.titulo}
+                  </td>
+                  <td
+                    className="max-w-48 truncate px-3 py-2.5 align-top text-ink-muted"
+                    title={p.correos.join(", ")}
+                  >
+                    {p.correos.length ? p.correos.join(", ") : "—"}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right align-top">
                     <div className="flex justify-end gap-4">
@@ -554,6 +602,7 @@ function Publicar({
     setError(null);
     marcarOcupado(true);
     try {
+      const correos = correosPorPersona(personas);
       const items = personas.map((p, i) => {
         const tipo = p.tipo as TipoCertificado;
         const plantilla = plantillas[tipo]!;
@@ -563,6 +612,7 @@ function Publicar({
           html: plantilla.html,
           tipo,
           plantilla: plantillaPorTipo(org, tipo)?.id,
+          correos: correos.get(normalizarBusqueda(p.nombre)) ?? [],
         };
       });
       setResultado(
@@ -596,8 +646,10 @@ function Publicar({
   return (
     <div className="flex flex-col gap-4 border-t border-border pt-5">
       <p className="text-small text-ink-muted">
-        La persona descarga su certificado escribiendo su nombre. Cada persona
-        tiene un solo certificado: si ya existía uno con el mismo nombre, se
+        La persona descarga sus certificados escribiendo su correo, o su
+        nombre completo si no tiene correo. Las filas con el mismo nombre son la
+        misma persona: cualquiera de sus correos le muestra todos sus
+        certificados. Si ya existía uno con el mismo nombre, tipo y título, se
         reemplaza.
       </p>
 
