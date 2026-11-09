@@ -1,21 +1,19 @@
 import { Download, Search } from "lucide-react";
 import Link from "next/link";
 import { BotonGenerar } from "@/componentes/admin/boton-generar";
-import {
-  BotonRegenerar,
-  BotonRegenerarTodos,
-} from "@/componentes/admin/regenerar";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { notFound } from "next/navigation";
 import { normalizarBusqueda } from "@/lib/busqueda";
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { esTipo, etiquetaTipo, TIPOS } from "@/lib/tipos";
+import { etiquetaTipo, TIPOS } from "@/lib/tipos";
 import {
   clienteAdmin,
   TABLA,
   type FilaCertificado,
 } from "@/lib/servidor/insforge";
+import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
+import { BotonDescargarZip } from "@/componentes/admin/descargar-zip";
 
 const POR_PAGINA = 50;
 
@@ -25,7 +23,6 @@ type Fila = Pick<
   | "clave_original"
   | "nombre"
   | "tipo"
-  | "plantilla"
   | "datos"
   | "correos"
   | "descargas"
@@ -47,14 +44,13 @@ export default async function Certificados({
   const org = buscarOrganizacion((await params).org);
   if (!org) notFound();
   const parametros = await searchParams;
-  const q = String(parametros.q ?? "").trim();
-  const tipo = esTipo(parametros.tipo) ? parametros.tipo : "";
+  const { q, tipo } = leerFiltros(parametros);
   const pagina = Math.max(1, Number(parametros.pagina) || 1);
 
-  let consulta = clienteAdmin()
+  const consulta = clienteAdmin()
     .database.from(TABLA)
     .select(
-      "id, clave_original, nombre, tipo, plantilla, datos, correos, descargas, ultima_descarga, actualizado_en",
+      "id, clave_original, nombre, tipo, datos, correos, descargas, ultima_descarga, actualizado_en",
       {
         count: "exact",
       },
@@ -62,19 +58,7 @@ export default async function Certificados({
     .eq("organizacion", org.slug)
     .order("nombre")
     .range((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA - 1);
-  // Comas, paréntesis, llaves, comillas y comodines romperían el filtro `or`
-  // de PostgREST.
-  const termino = q.replace(/[,()*%\\{}"]/g, " ").trim();
-  if (termino.includes("@")) {
-    // Un correo: coincidencia exacta con uno de los registrados.
-    consulta = consulta.contains("correos", [termino.toLowerCase()]);
-  } else if (termino) {
-    consulta = consulta.or(
-      `nombre.ilike.*${termino}*,clave_original.ilike.*${termino}*`,
-    );
-  }
-  if (tipo) consulta = consulta.eq("tipo", tipo);
-  const { data, count, error } = await consulta;
+  const { data, count, error } = await aplicarFiltros(consulta, { q, tipo });
   const filas = (data ?? []) as Fila[];
   const total = count ?? 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
@@ -90,7 +74,7 @@ export default async function Certificados({
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {total > 0 && <BotonRegenerarTodos />}
+          {total > 0 && <BotonDescargarZip q={q} tipo={tipo} total={total} />}
           <BotonGenerar />
         </div>
       </div>
@@ -169,7 +153,6 @@ export default async function Certificados({
                     <Download aria-hidden size={16} strokeWidth={1.75} />
                     PDF
                   </a>
-                  {f.plantilla && <BotonRegenerar certificado={f} comoBoton />}
                   <BotonEliminar id={f.id} nombre={f.nombre} comoBoton />
                 </div>
               </li>
@@ -247,7 +230,6 @@ export default async function Certificados({
                         >
                           <Download aria-hidden size={16} strokeWidth={1.75} />
                         </a>
-                        {f.plantilla && <BotonRegenerar certificado={f} />}
                         <BotonEliminar id={f.id} nombre={f.nombre} />
                       </div>
                     </td>

@@ -16,6 +16,10 @@ import { regenerar, type CertificadoRegenerable } from "@/lib/regenerar";
 
 const ESPERA_MS = 4000;
 
+// Oculto en el panel desde 2026-11-09: el diseño del evento ya está definido.
+// Se conserva por si hay que volver a generar con una plantilla corregida
+// (agregar BotonRegenerar / BotonRegenerarTodos en src/app/[org]/admin/page.tsx).
+
 // Regenera un certificado con la plantilla actual y sus datos guardados.
 export function BotonRegenerar({
   certificado,

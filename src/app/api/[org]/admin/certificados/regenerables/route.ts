@@ -1,9 +1,9 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
+import { todasLasFilas } from "@/lib/servidor/paginar";
 
-const MAXIMO = 5000;
-
-// Certificados que se pueden regenerar: los hechos con una plantilla del evento.
+// Certificados que se pueden regenerar: los hechos con una plantilla del
+// evento. Se leen por páginas para traerlos todos.
 export async function GET(
   _: Request,
   ctx: RouteContext<"/api/[org]/admin/certificados/regenerables">,
@@ -13,16 +13,20 @@ export async function GET(
   if (!(await usuarioAdmin(org.slug))) {
     return Response.json({ error: "No autorizado" }, { status: 401 });
   }
-  const { data, error } = await clienteAdmin()
-    .database.from(TABLA)
-    .select("id, clave_original, nombre, tipo, plantilla, datos, correos")
-    .eq("organizacion", org.slug)
-    .not("plantilla", "is", null)
-    .order("nombre")
-    .range(0, MAXIMO - 1);
-  if (error) {
-    console.error(error);
+  try {
+    const certificados = await todasLasFilas((desde, hasta) =>
+      clienteAdmin()
+        .database.from(TABLA)
+        .select("id, clave_original, nombre, tipo, plantilla, datos, correos")
+        .eq("organizacion", org.slug)
+        .not("plantilla", "is", null)
+        .order("nombre")
+        .order("id")
+        .range(desde, hasta),
+    );
+    return Response.json({ certificados });
+  } catch (e) {
+    console.error(e);
     return Response.json({ error: "No se pudo leer la base de datos." }, { status: 500 });
   }
-  return Response.json({ certificados: data ?? [] });
 }

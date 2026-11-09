@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { useOrganizacion } from "@/componentes/organizacion";
 import { descargar } from "@/lib/pdf";
+import { armarZip } from "@/lib/zip";
 
 type Modo = "correo" | "nombre";
 type Resultado = { id: string; nombre: string; tipo: string; titulo: string };
@@ -106,6 +107,45 @@ export function FormularioDescarga() {
     }
   }
 
+  // Todos en un ZIP armado aquí (cada PDF se pide por aparte: Vercel no deja
+  // responder archivos de más de ~4,5 MB).
+  async function bajarTodos(lista: Resultado[]) {
+    setOcupado("todos");
+    setEstado(null);
+    try {
+      const zip = await armarZip(
+        lista.map((r) => ({
+          nombre: `Certificado ${r.tipo.toLowerCase()} - ${r.nombre}`,
+          obtener: async () => {
+            const respuesta = await fetch(`/api/${org.slug}/descargar`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...busqueda, id: r.id }),
+            });
+            if (!respuesta.ok) {
+              throw new Error(await mensajeDeError(respuesta, "No se pudo descargar."));
+            }
+            return respuesta.blob();
+          },
+        })),
+        { simultaneos: 3 },
+      );
+      const nombres = new Set(lista.map((r) => r.nombre));
+      descargar(
+        zip,
+        nombres.size === 1 ? `Certificados - ${lista[0].nombre}.zip` : "Certificados.zip",
+        "application/zip",
+      );
+    } catch (err) {
+      setEstado({
+        tipo: "error",
+        texto: err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message),
+      });
+    } finally {
+      setOcupado(null);
+    }
+  }
+
   async function bajarDeLista(cuerpo: Record<string, unknown>, clave: string, porDefecto: string) {
     setOcupado(clave);
     setEstado(null);
@@ -163,7 +203,7 @@ export function FormularioDescarga() {
         </ul>
         <button
           type="button"
-          onClick={() => bajarDeLista({ todos: true }, "todos", "certificados.zip")}
+          onClick={() => bajarTodos(resultados)}
           disabled={ocupado !== null}
           className="boton-primario"
         >
