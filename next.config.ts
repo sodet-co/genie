@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Cuándo se construyó esta versión (en cada despliegue) y de qué commit:
+  // el panel lo muestra para confirmar que los cambios ya están en línea.
+  env: {
+    VERSION_FECHA: new Date().toISOString(),
+    VERSION_COMMIT: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7),
+  },
   cacheComponents: true,
   partialPrefetching: true,
   // Antes del multicliente el panel vivía en la raíz: las rutas viejas llevan

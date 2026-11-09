@@ -46,7 +46,30 @@ export default async function LayoutAdmin({ children, params }: LayoutProps<"/[o
           <Guardia organizacion={org.slug}>{children}</Guardia>
         </Suspense>
       </main>
+      <footer className="mx-auto w-full max-w-6xl px-4 pb-6 text-small text-ink-muted sm:px-6">
+        <VersionPlataforma />
+      </footer>
     </>
+  );
+}
+
+// El servidor (Vercel) corre en UTC: la hora se muestra en la de Colombia.
+const fechaVersion = new Intl.DateTimeFormat("es-CO", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: "America/Bogota",
+});
+
+// Fecha y hora del último despliegue (se fija al construir la app).
+function VersionPlataforma() {
+  const fecha = process.env.VERSION_FECHA;
+  if (!fecha) return null;
+  const commit = process.env.VERSION_COMMIT;
+  return (
+    <p>
+      Plataforma actualizada el {fechaVersion.format(new Date(fecha))}
+      {commit && <span title="Versión (commit)"> · {commit}</span>}
+    </p>
   );
 }
 
