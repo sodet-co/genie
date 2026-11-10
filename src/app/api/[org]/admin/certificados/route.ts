@@ -7,6 +7,7 @@ import {
 } from "@/lib/busqueda";
 import { buscarOrganizacion, plantillaPorId } from "@/lib/organizaciones";
 import { esTipo } from "@/lib/tipos";
+import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
 import {
   BUCKET,
   clienteAdmin,
@@ -16,20 +17,19 @@ import {
 
 const TAMANO_MAXIMO = 15 * 1024 * 1024;
 
-function error(estado: number, mensaje: string) {
-  return Response.json({ error: mensaje }, { status: estado });
-}
-
 // Publica (o reemplaza) un certificado de una persona. Lo llama el generador del panel
-// después de crear cada PDF en el navegador.
+// después de crear cada PDF en el navegador. Cada intento queda en la bitácora.
 export async function POST(
   request: Request,
   ctx: RouteContext<"/api/[org]/admin/certificados">,
 ) {
-  const org = buscarOrganizacion((await ctx.params).org);
-  if (!org) return error(404, "Organización no encontrada.");
-  if (!(await usuarioAdmin(org.slug)))
-    return error(401, "Sesión vencida. Vuelve a ingresar.");
+  const slug = (await ctx.params).org;
+  const org = buscarOrganizacion(slug);
+  const b = bitacoraDe(request, { evento: "admin.publicar", organizacion: org?.slug ?? slug });
+  if (!org) return b.json(404, { error: "Organización no encontrada." });
+  const usuario = await usuarioAdmin(org.slug);
+  if (!usuario) return b.json(401, { error: "Sesión vencida. Vuelve a ingresar." }, { resultado: "rechazado" });
+  b.quien(usuario.email, "panel");
 
   const formulario = await request.formData();
   const archivo = formulario.get("archivo");
@@ -40,16 +40,19 @@ export async function POST(
   const idPlantilla = formulario.get("plantilla");
   // Solo se guardan plantillas del evento conocidas (las que se pueden regenerar).
   const plantilla = plantillaPorId(org, String(idPlantilla ?? ""))?.id ?? null;
+  const contexto = { nombre, tipo: String(tipo ?? ""), plantilla, correos_enviados: String(formulario.get("correos") ?? "") };
 
-  if (!(archivo instanceof Blob)) return error(400, "Falta el PDF.");
-  if (!esTipo(tipo)) return error(400, "Tipo de certificado inválido.");
-  if (archivo.size > TAMANO_MAXIMO) return error(413, "El PDF supera 15 MB.");
+  if (!(archivo instanceof Blob)) return b.json(400, { error: "Falta el PDF." }, { detalle: contexto });
+  if (!esTipo(tipo)) return b.json(400, { error: "Tipo de certificado inválido." }, { detalle: contexto });
+  if (archivo.size > TAMANO_MAXIMO) {
+    return b.json(413, { error: "El PDF supera 15 MB." }, { detalle: { ...contexto, bytes: archivo.size } });
+  }
   if (!clave || claveOriginal.length > LARGO_MAXIMO_CLAVE) {
-    return error(400, "La clave de búsqueda está vacía o es demasiado larga.");
+    return b.json(400, { error: "La clave de búsqueda está vacía o es demasiado larga." }, { detalle: contexto });
   }
   const bytes = new Uint8Array(await archivo.arrayBuffer());
   if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") {
-    return error(400, "El archivo no es un PDF.");
+    return b.json(400, { error: "El archivo no es un PDF." }, { detalle: { ...contexto, bytes: bytes.length } });
   }
 
   let datos: Record<string, string> = {};
@@ -57,18 +60,23 @@ export async function POST(
     const leido = JSON.parse(String(formulario.get("datos") ?? "{}"));
     if (leido && typeof leido === "object") datos = leido;
   } catch {
-    return error(400, "Datos inválidos.");
+    return b.json(400, { error: "Datos inválidos." }, { detalle: contexto });
   }
 
   // Correos con los que la persona lo descarga en el portal (puede no tener).
   const { validos: correos, invalidos } = separarCorreos(
     String(formulario.get("correos") ?? ""),
   );
-  if (invalidos.length) return error(400, `Correo inválido: ${invalidos.join(", ")}`);
-  if (correos.length > MAXIMO_CORREOS) return error(400, "Demasiados correos.");
+  if (invalidos.length) {
+    return b.json(400, { error: `Correo inválido: ${invalidos.join(", ")}` }, { detalle: { ...contexto, datos } });
+  }
+  if (correos.length > MAXIMO_CORREOS) {
+    return b.json(400, { error: "Demasiados correos." }, { detalle: { ...contexto, datos } });
+  }
 
   // Misma persona, tipo y título = mismo certificado: se reemplaza.
   const referencia = referenciaCertificado(tipo, String(datos.titulo ?? ""));
+  const detalle = { ...contexto, datos, correos, referencia, bytes: bytes.length };
 
   const db = clienteAdmin();
   const { data: existente, error: errorConsulta } = await db.database
@@ -80,7 +88,9 @@ export async function POST(
     .maybeSingle();
   if (errorConsulta) {
     console.error(errorConsulta);
-    return error(500, "No se pudo consultar la base de datos.");
+    return b.json(500, { error: "No se pudo consultar la base de datos." }, {
+      detalle: { ...detalle, error: describirError(errorConsulta) },
+    });
   }
 
   // Los PDF nuevos van en una carpeta por organización.
@@ -91,7 +101,10 @@ export async function POST(
     .upload(archivoKey, new Blob([bytes], { type: "application/pdf" }));
   if (errorSubida) {
     console.error(errorSubida);
-    return error(500, "No se pudo guardar el PDF.");
+    return b.json(500, { error: "No se pudo guardar el PDF." }, {
+      certificadoId: existente?.id ?? null,
+      detalle: { ...detalle, archivo_key: archivoKey, error: describirError(errorSubida) },
+    });
   }
 
   const fila = {
@@ -106,17 +119,30 @@ export async function POST(
     datos,
     archivo_key: archivoKey,
   };
-  const { error: errorGuardado } = existente
+  const { data: guardado, error: errorGuardado } = existente
     ? await db.database
         .from(TABLA)
         .update({ ...fila, actualizado_en: new Date().toISOString() })
         .eq("id", existente.id)
-    : await db.database.from(TABLA).insert([fila]);
+        .select("id")
+        .maybeSingle()
+    : await db.database.from(TABLA).insert([fila]).select("id").maybeSingle();
   if (errorGuardado) {
     console.error(errorGuardado);
     if (!existente) await db.storage.from(BUCKET).remove(archivoKey);
-    return error(500, "No se pudo registrar el certificado.");
+    return b.json(500, { error: "No se pudo registrar el certificado." }, {
+      certificadoId: existente?.id ?? null,
+      detalle: { ...detalle, archivo_key: archivoKey, error: describirError(errorGuardado) },
+    });
   }
 
-  return Response.json({ reemplazado: Boolean(existente) });
+  return b.json(
+    200,
+    { reemplazado: Boolean(existente) },
+    {
+      mensaje: `${existente ? "Reemplazó" : "Publicó"} el certificado de ${nombre}`,
+      certificadoId: (guardado as { id?: string } | null)?.id ?? existente?.id ?? null,
+      detalle: { ...detalle, archivo_key: archivoKey, reemplazado: Boolean(existente) },
+    },
+  );
 }

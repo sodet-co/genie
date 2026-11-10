@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { FileSpreadsheet, Search } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BotonGenerar } from "@/componentes/admin/boton-generar";
@@ -76,6 +76,16 @@ export default async function Certificados({
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {total > 0 && (
+            <a
+              href={`/api/${org.slug}/admin/certificados/excel?${new URLSearchParams({ q, tipo })}`}
+              className="boton-secundario w-full sm:w-auto"
+              title="Una fila por certificado, con los filtros aplicados"
+            >
+              <FileSpreadsheet aria-hidden size={16} strokeWidth={1.75} />
+              Informe Excel
+            </a>
+          )}
           {total > 0 && <BotonDescargarZip q={q} tipo={tipo} total={total} />}
           <BotonGenerar />
         </div>

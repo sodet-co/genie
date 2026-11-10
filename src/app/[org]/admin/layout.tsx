@@ -24,6 +24,9 @@ export default async function LayoutAdmin({ children, params }: LayoutProps<"/[o
           <Link href={`${base}/admin/plantillas`} className="enlace px-1.5 py-1 sm:px-2">
             Plantillas
           </Link>
+          <Link href={`${base}/admin/bitacora`} className="enlace px-1.5 py-1 sm:px-2">
+            Bitácora
+          </Link>
         </nav>
         <span aria-hidden className="h-5 w-px bg-border" />
         <Suspense fallback={<span className="size-7 rounded-full bg-surface-sunken" />}>

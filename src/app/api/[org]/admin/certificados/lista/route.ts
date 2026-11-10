@@ -1,4 +1,5 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
+import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
 import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
 import { todasLasFilas } from "@/lib/servidor/paginar";
@@ -10,11 +11,13 @@ export async function GET(
   request: Request,
   ctx: RouteContext<"/api/[org]/admin/certificados/lista">,
 ) {
-  const org = buscarOrganizacion((await ctx.params).org);
-  if (!org) return Response.json({ error: "No encontrado" }, { status: 404 });
-  if (!(await usuarioAdmin(org.slug))) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const slug = (await ctx.params).org;
+  const org = buscarOrganizacion(slug);
+  const b = bitacoraDe(request, { evento: "admin.lista_zip", organizacion: org?.slug ?? slug });
+  if (!org) return b.json(404, { error: "No encontrado" });
+  const usuario = await usuarioAdmin(org.slug);
+  if (!usuario) return b.json(401, { error: "No autorizado" }, { resultado: "rechazado" });
+  b.quien(usuario.email, "panel");
   const filtros = leerFiltros(Object.fromEntries(new URL(request.url).searchParams));
   try {
     const certificados = await todasLasFilas((desde, hasta) =>
@@ -30,9 +33,14 @@ export async function GET(
         filtros,
       ),
     );
-    return Response.json({ certificados }, { headers: { "Cache-Control": "private, no-store" } });
+    return b.json(
+      200,
+      { certificados },
+      { mensaje: `Lista para ZIP: ${certificados.length} certificados`, detalle: { filtros, cantidad: certificados.length } },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (e) {
     console.error(e);
-    return Response.json({ error: "No se pudo leer la base de datos." }, { status: 500 });
+    return b.json(500, { error: "No se pudo leer la base de datos." }, { detalle: { filtros, error: describirError(e) } });
   }
 }

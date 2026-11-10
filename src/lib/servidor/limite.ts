@@ -21,9 +21,13 @@ function limpiar(ahora: number, ventanaMs: number) {
 }
 
 export function ipDe(request: Request) {
+  return ipDeCabeceras(request.headers);
+}
+
+export function ipDeCabeceras(cabeceras: Headers) {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
+    cabeceras.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    cabeceras.get("x-real-ip") ||
     "desconocida"
   );
 }

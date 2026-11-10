@@ -8,6 +8,7 @@ import { useOrganizacion } from "@/componentes/organizacion";
 import { descargar } from "@/lib/pdf";
 import { etiquetaTipo } from "@/lib/tipos";
 import { armarZip, ZipCancelado } from "@/lib/zip";
+import { reportar, textoError } from "@/lib/bitacora-cliente";
 
 export type ItemZip = { id: string; nombre: string; tipo: string };
 
@@ -56,7 +57,9 @@ export function BotonDescargarZip(
           nombre: `Certificado ${etiquetaTipo(c.tipo).toLowerCase()} - ${c.nombre}`,
           carpeta: etiquetaTipo(c.tipo),
           obtener: async () => {
-            const pdf = await fetch(`/api/${org.slug}/admin/certificados/${c.id}`);
+            const pdf = await fetch(`/api/${org.slug}/admin/certificados/${c.id}`, {
+              headers: { "X-Origen": "zip" },
+            });
             if (pdf.status === 401) throw new SinSesion();
             if (!pdf.ok) throw new Error(`No se pudo bajar el certificado de ${c.nombre}`);
             return pdf.blob();
@@ -65,22 +68,36 @@ export function BotonDescargarZip(
         { onProgreso: setHechos, estaCancelado: () => cancelado.current },
       );
       const fecha = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-      descargar(zip, `Certificados ${org.nombre} ${fecha}.zip`, "application/zip");
-      setEstado({ tipo: "ok", texto: `Listo: ${certificados.length} certificado(s) en el ZIP.` });
+      const archivo = `Certificados ${org.nombre} ${fecha}.zip`;
+      descargar(zip, archivo, "application/zip");
+      const texto = `Listo: ${certificados.length} certificado(s) en el ZIP.`;
+      setEstado({ tipo: "ok", texto });
+      reportar(org.slug, {
+        evento: "admin.zip",
+        resultado: "ok",
+        mensaje: `Descargó "${archivo}" con ${certificados.length} certificados`,
+        detalle: { archivo, bytes: zip.size, seleccion: Boolean(seleccion), q, tipo, cantidad: certificados.length },
+      });
     } catch (e) {
+      let texto: string;
       if (e instanceof ZipCancelado) {
-        setEstado({ tipo: "error", texto: "Descarga cancelada." });
+        texto = "Descarga cancelada.";
       } else if (e instanceof SinSesion) {
-        setEstado({ tipo: "error", texto: "Tu sesión venció. Vuelve a ingresar." });
+        texto = "Tu sesión venció. Vuelve a ingresar.";
       } else {
         console.error(e);
-        setEstado({
-          tipo: "error",
-          texto: e instanceof Error && e.message.startsWith("No se pudo")
+        texto =
+          e instanceof Error && e.message.startsWith("No se pudo")
             ? `${e.message}. Inténtalo de nuevo.`
-            : "No se pudo armar el ZIP. Inténtalo de nuevo.",
-        });
+            : "No se pudo armar el ZIP. Inténtalo de nuevo.";
       }
+      setEstado({ tipo: "error", texto });
+      reportar(org.slug, {
+        evento: "admin.zip",
+        resultado: e instanceof ZipCancelado ? "rechazado" : "error",
+        mensaje: texto,
+        detalle: { seleccion: Boolean(seleccion), q, tipo, error: textoError(e) },
+      });
     } finally {
       setOcupado(false);
     }

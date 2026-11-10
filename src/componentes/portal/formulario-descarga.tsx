@@ -6,6 +6,7 @@ import { Mensaje } from "@/componentes/generador/mensaje";
 import { useOrganizacion } from "@/componentes/organizacion";
 import { descargar } from "@/lib/pdf";
 import { armarZip } from "@/lib/zip";
+import { reportar, textoError } from "@/lib/bitacora-cliente";
 
 type Modo = "correo" | "nombre";
 type Resultado = { id: string; nombre: string; tipo: string; titulo: string };
@@ -98,9 +99,14 @@ export function FormularioDescarga() {
       setBusqueda(datos);
       setResultados(certificados);
     } catch (err) {
-      setEstado({
-        tipo: "error",
-        texto: err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message),
+      const texto = err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message);
+      setEstado({ tipo: "error", texto });
+      reportar(org.slug, {
+        evento: "portal.error_cliente",
+        resultado: "error",
+        mensaje: texto,
+        actor: valor.trim(),
+        detalle: { paso: "buscar o descargar el único certificado", modo, error: textoError(err) },
       });
     } finally {
       setOcupado(null);
@@ -119,7 +125,7 @@ export function FormularioDescarga() {
           obtener: async () => {
             const respuesta = await fetch(`/api/${org.slug}/descargar`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-Origen": "zip" },
               body: JSON.stringify({ ...busqueda, id: r.id }),
             });
             if (!respuesta.ok) {
@@ -131,15 +137,24 @@ export function FormularioDescarga() {
         { simultaneos: 3 },
       );
       const nombres = new Set(lista.map((r) => r.nombre));
-      descargar(
-        zip,
-        nombres.size === 1 ? `Certificados - ${lista[0].nombre}.zip` : "Certificados.zip",
-        "application/zip",
-      );
+      const archivo = nombres.size === 1 ? `Certificados - ${lista[0].nombre}.zip` : "Certificados.zip";
+      descargar(zip, archivo, "application/zip");
+      reportar(org.slug, {
+        evento: "portal.zip",
+        resultado: "ok",
+        mensaje: `Descargó "${archivo}" con ${lista.length} certificados`,
+        actor: Object.values(busqueda ?? {})[0],
+        detalle: { archivo, bytes: zip.size, certificados: lista.map((r) => r.id) },
+      });
     } catch (err) {
-      setEstado({
-        tipo: "error",
-        texto: err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message),
+      const texto = err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message);
+      setEstado({ tipo: "error", texto });
+      reportar(org.slug, {
+        evento: "portal.zip",
+        resultado: "error",
+        mensaje: texto,
+        actor: Object.values(busqueda ?? {})[0],
+        detalle: { error: textoError(err), certificados: lista.map((r) => r.id) },
       });
     } finally {
       setOcupado(null);
@@ -152,9 +167,14 @@ export function FormularioDescarga() {
     try {
       await bajar({ ...busqueda, ...cuerpo }, porDefecto);
     } catch (err) {
-      setEstado({
-        tipo: "error",
-        texto: err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message),
+      const texto = err instanceof TypeError ? "No hay conexión. Inténtalo de nuevo." : String((err as Error).message);
+      setEstado({ tipo: "error", texto });
+      reportar(org.slug, {
+        evento: "portal.error_cliente",
+        resultado: "error",
+        mensaje: texto,
+        actor: Object.values(busqueda ?? {})[0],
+        detalle: { paso: "descargar desde la lista", ...cuerpo, error: textoError(err) },
       });
     } finally {
       setOcupado(null);
