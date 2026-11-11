@@ -63,7 +63,7 @@ export function BuscadorCertificados({ q, tipo }: { q: string; tipo: string }) {
           name="q"
           value={texto}
           onChange={(e) => alEscribir(e.target.value)}
-          placeholder="Buscar por nombre o correo"
+          placeholder="Buscar por nombre, título o correo"
           aria-label="Buscar"
           autoComplete="off"
           className="campo w-full pl-9 pr-9"

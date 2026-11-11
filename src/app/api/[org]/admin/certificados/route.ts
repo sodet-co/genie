@@ -4,6 +4,7 @@ import {
   normalizarBusqueda,
   referenciaCertificado,
   separarCorreos,
+  textoBusqueda,
 } from "@/lib/busqueda";
 import { buscarOrganizacion, plantillaPorId } from "@/lib/organizaciones";
 import { esTipo } from "@/lib/tipos";
@@ -118,6 +119,7 @@ export async function POST(
     plantilla,
     datos,
     archivo_key: archivoKey,
+    busqueda: textoBusqueda({ nombre, clave: claveOriginal, titulo: String(datos.titulo ?? ""), correos }),
   };
   const { data: guardado, error: errorGuardado } = existente
     ? await db.database

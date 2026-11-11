@@ -39,6 +39,28 @@ export function separarCorreos(texto: string) {
   return { validos, invalidos };
 }
 
+// Texto del buscador maestro del panel: minúscula, sin tildes y solo letras,
+// números y los signos de un correo (@ . -), separados por un espacio.
+export function normalizarTextoBusqueda(texto: string) {
+  return texto
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}@.-]+/gu, " ")
+    .trim();
+}
+
+export function textoBusqueda(partes: {
+  nombre: string;
+  clave?: string;
+  titulo?: string;
+  correos?: string[];
+}) {
+  return normalizarTextoBusqueda(
+    [partes.nombre, partes.clave ?? "", partes.titulo ?? "", ...(partes.correos ?? [])].join(" "),
+  );
+}
+
 // Qué certificado de la persona es: su tipo y su título. Una misma persona
 // puede tener varios (dos ponencias, o coordinadora y ponente); volver a
 // publicar la misma combinación reemplaza el anterior.

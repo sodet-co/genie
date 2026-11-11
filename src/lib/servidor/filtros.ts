@@ -1,33 +1,29 @@
+import { normalizarTextoBusqueda } from "@/lib/busqueda";
 import { esTipo } from "@/lib/tipos";
 
-// Lo que un listado de certificados del panel filtra: texto (nombre, clave o
-// un correo exacto) y tipo. Lo usan la página y la descarga masiva, para que
-// el ZIP traiga exactamente lo que se ve en pantalla.
+// Lo que un listado de certificados del panel filtra: texto (buscador maestro:
+// nombre, título de la ponencia o mesa, correos y clave) y tipo. Lo usan la
+// página, la descarga masiva y el informe Excel, para que traigan exactamente
+// lo que se ve en pantalla.
 export function leerFiltros(parametros: Record<string, string | string[] | undefined>) {
-  const q = String(parametros.q ?? "").trim();
+  const q = String(parametros.q ?? "").trim().slice(0, 200);
   const tipo = esTipo(parametros.tipo) ? parametros.tipo : "";
   return { q, tipo };
 }
 
 type Consulta<Q> = {
-  or(filtros: string): Q;
-  contains(columna: string, valor: string[]): Q;
+  ilike(columna: string, patron: string): Q;
   eq(columna: string, valor: string): Q;
 };
 
+// Cada palabra del texto debe aparecer en la columna `busqueda` (sin importar
+// mayúsculas ni tildes): "moreno bogota" trae a quien tenga las dos.
 export function aplicarFiltros<Q extends Consulta<Q>>(
   consulta: Q,
   { q, tipo }: { q: string; tipo: string },
 ): Q {
-  // Comas, paréntesis, llaves, comillas y comodines romperían el filtro `or`
-  // de PostgREST.
-  const termino = q.replace(/[,()*%\\{}"]/g, " ").trim();
-  if (termino.includes("@")) {
-    // Un correo: coincidencia exacta con uno de los registrados.
-    consulta = consulta.contains("correos", [termino.toLowerCase()]);
-  } else if (termino) {
-    consulta = consulta.or(`nombre.ilike.*${termino}*,clave_original.ilike.*${termino}*`);
-  }
+  const palabras = normalizarTextoBusqueda(q).split(" ").filter(Boolean).slice(0, 8);
+  for (const palabra of palabras) consulta = consulta.ilike("busqueda", `%${palabra}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
   return consulta;
 }
