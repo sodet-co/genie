@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Search } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BotonGenerar } from "@/componentes/admin/boton-generar";
@@ -7,9 +7,11 @@ import { ListaCertificados } from "@/componentes/admin/lista-certificados";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { normalizarBusqueda } from "@/lib/busqueda";
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { TIPOS } from "@/lib/tipos";
+import { BuscadorCertificados } from "@/componentes/admin/buscador-certificados";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
-import { clienteAdmin, TABLA, type FilaCertificado } from "@/lib/servidor/insforge";
+import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/insforge";
+import { puedeRegenerar } from "@/lib/servidor/permisos";
+import { BotonRegenerarTodos } from "@/componentes/admin/regenerar";
 
 const POR_PAGINA = 20;
 
@@ -19,6 +21,7 @@ type Fila = Pick<
   | "clave_original"
   | "nombre"
   | "tipo"
+  | "plantilla"
   | "datos"
   | "correos"
   | "descargas"
@@ -48,11 +51,12 @@ export default async function Certificados({
   const parametros = await searchParams;
   const { q, tipo } = leerFiltros(parametros);
   const pagina = Math.max(1, Number(parametros.pagina) || 1);
+  const regenera = puedeRegenerar((await usuarioAdmin(org.slug))?.email);
 
   const consulta = clienteAdmin()
     .database.from(TABLA)
     .select(
-      "id, clave_original, nombre, tipo, datos, correos, descargas, ultima_descarga, actualizado_en",
+      "id, clave_original, nombre, tipo, plantilla, datos, correos, descargas, ultima_descarga, actualizado_en",
       { count: "exact" },
     )
     .eq("organizacion", org.slug)
@@ -87,39 +91,12 @@ export default async function Certificados({
             </a>
           )}
           {total > 0 && <BotonDescargarZip q={q} tipo={tipo} total={total} />}
+          {total > 0 && regenera && <BotonRegenerarTodos />}
           <BotonGenerar />
         </div>
       </div>
 
-      <form
-        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:flex-wrap"
-        role="search"
-      >
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Buscar por nombre o correo"
-          aria-label="Buscar"
-          className="campo col-span-2 sm:max-w-sm sm:flex-1"
-        />
-        <select
-          name="tipo"
-          defaultValue={tipo}
-          aria-label="Tipo"
-          className="campo sm:w-auto"
-        >
-          <option value="">Todos los tipos</option>
-          {TIPOS.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.etiqueta}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="boton-secundario">
-          <Search aria-hidden size={16} strokeWidth={1.75} />
-          Buscar
-        </button>
-      </form>
+      <BuscadorCertificados q={q} tipo={tipo} />
 
       {error && (
         <Mensaje tipo="error">
@@ -149,6 +126,20 @@ export default async function Certificados({
               descargas: f.descargas,
               ultimaDescarga: f.ultima_descarga ? fecha.format(new Date(f.ultima_descarga)) : "",
               generado: fecha.format(new Date(f.actualizado_en)),
+              // Solo para quien puede regenerar, y solo los hechos con una
+              // plantilla del evento (los de "otro evento" no se pueden).
+              regenerable:
+                regenera && f.plantilla
+                  ? {
+                      id: f.id,
+                      clave_original: f.clave_original,
+                      nombre: f.nombre,
+                      tipo: f.tipo,
+                      plantilla: f.plantilla,
+                      datos: f.datos ?? {},
+                      correos: f.correos ?? [],
+                    }
+                  : null,
             }))}
           />
           <Paginacion {...paginacion} />

@@ -6,6 +6,8 @@ import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { BotonDescargarZip, type ItemZip } from "@/componentes/admin/descargar-zip";
 import { useOrganizacion } from "@/componentes/organizacion";
 import { etiquetaTipo } from "@/lib/tipos";
+import { BotonRegenerar } from "@/componentes/admin/regenerar";
+import type { CertificadoRegenerable } from "@/lib/regenerar";
 
 export type FilaLista = {
   id: string;
@@ -18,6 +20,8 @@ export type FilaLista = {
   descargas: number;
   ultimaDescarga: string;
   generado: string;
+  // Solo para quien puede regenerar (ver lib/servidor/permisos).
+  regenerable: CertificadoRegenerable | null;
 };
 
 type Seleccion = Record<string, ItemZip>;
@@ -155,6 +159,7 @@ export function ListaCertificados({ filas }: { filas: FilaLista[] }) {
                     <Download aria-hidden size={16} strokeWidth={1.75} />
                     PDF
                   </a>
+                  {f.regenerable && <BotonRegenerar certificado={f.regenerable} comoBoton />}
                   <BotonEliminar id={f.id} nombre={f.nombre} comoBoton />
                 </div>
               </div>
@@ -223,6 +228,7 @@ export function ListaCertificados({ filas }: { filas: FilaLista[] }) {
                     >
                       <Download aria-hidden size={16} strokeWidth={1.75} />
                     </a>
+                    {f.regenerable && <BotonRegenerar certificado={f.regenerable} />}
                     <BotonEliminar id={f.id} nombre={f.nombre} />
                   </div>
                 </td>

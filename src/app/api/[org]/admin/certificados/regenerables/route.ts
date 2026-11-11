@@ -1,6 +1,7 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
 import { todasLasFilas } from "@/lib/servidor/paginar";
+import { puedeRegenerar } from "@/lib/servidor/permisos";
 
 // Certificados que se pueden regenerar: los hechos con una plantilla del
 // evento. Se leen por páginas para traerlos todos.
@@ -10,8 +11,10 @@ export async function GET(
 ) {
   const org = buscarOrganizacion((await ctx.params).org);
   if (!org) return Response.json({ error: "No encontrado" }, { status: 404 });
-  if (!(await usuarioAdmin(org.slug))) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
+  const usuario = await usuarioAdmin(org.slug);
+  if (!usuario) return Response.json({ error: "No autorizado" }, { status: 401 });
+  if (!puedeRegenerar(usuario.email)) {
+    return Response.json({ error: "Tu cuenta no puede regenerar certificados." }, { status: 403 });
   }
   try {
     const certificados = await todasLasFilas((desde, hasta) =>
