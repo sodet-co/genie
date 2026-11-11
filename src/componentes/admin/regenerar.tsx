@@ -100,8 +100,10 @@ export function BotonRegenerar({
   );
 }
 
-// Regenera en lote todos los certificados hechos con plantillas del evento.
-export function BotonRegenerarTodos() {
+// Regenera en lote los certificados hechos con plantillas del evento: todos,
+// o solo los seleccionados en el listado ({ ids }).
+export function BotonRegenerarTodos({ ids }: { ids?: string[] } = {}) {
+  const seleccion = ids !== undefined;
   const router = useRouter();
   const org = useOrganizacion();
   const [abierto, setAbierto] = useState(false);
@@ -119,7 +121,14 @@ export function BotonRegenerarTodos() {
     setError(null);
     setHechos(0);
     try {
-      const respuesta = await fetch(`/api/${org.slug}/admin/certificados/regenerables`);
+      const url = `/api/${org.slug}/admin/certificados/regenerables`;
+      const respuesta = seleccion
+        ? await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids }),
+          })
+        : await fetch(url);
       if (respuesta.status === 401) throw new SesionVencida();
       if (!respuesta.ok) throw new Error(`error ${respuesta.status}`);
       const { certificados } = (await respuesta.json()) as {
@@ -158,7 +167,7 @@ export function BotonRegenerarTodos() {
         className="boton-secundario w-full sm:w-auto"
       >
         <RefreshCw aria-hidden size={16} strokeWidth={1.75} />
-        Regenerar todos
+        {seleccion ? `Regenerar ${ids.length}` : "Regenerar todos"}
       </button>
       <Dialogo
         abierto={abierto}
@@ -167,7 +176,7 @@ export function BotonRegenerarTodos() {
           router.refresh();
         }}
         bloquearCierre={ocupado}
-        titulo="Regenerar todos los certificados"
+        titulo={seleccion ? `Regenerar ${ids.length} certificado(s) seleccionado(s)` : "Regenerar todos los certificados"}
         descripcion="Con la plantilla actual y los datos guardados de cada persona."
         ancho="sm:max-w-xl"
       >

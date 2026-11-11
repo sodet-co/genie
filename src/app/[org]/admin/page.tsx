@@ -114,6 +114,7 @@ export default async function Certificados({
         <>
           <Paginacion {...paginacion} />
           <ListaCertificados
+            puedeRegenerar={regenera}
             filas={filas.map((f) => ({
               id: f.id,
               nombre: f.nombre,

@@ -6,7 +6,7 @@ import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { BotonDescargarZip, type ItemZip } from "@/componentes/admin/descargar-zip";
 import { useOrganizacion } from "@/componentes/organizacion";
 import { etiquetaTipo } from "@/lib/tipos";
-import { BotonRegenerar } from "@/componentes/admin/regenerar";
+import { BotonRegenerar, BotonRegenerarTodos } from "@/componentes/admin/regenerar";
 import type { CertificadoRegenerable } from "@/lib/regenerar";
 
 export type FilaLista = {
@@ -56,7 +56,14 @@ function useSeleccion(org: string) {
   return [seleccion, setSeleccion] as const;
 }
 
-export function ListaCertificados({ filas }: { filas: FilaLista[] }) {
+export function ListaCertificados({
+  filas,
+  puedeRegenerar = false,
+}: {
+  filas: FilaLista[];
+  // Solo la cuenta autorizada ve "Regenerar" en la barra de seleccionados.
+  puedeRegenerar?: boolean;
+}) {
   const org = useOrganizacion();
   const [seleccion, setSeleccion] = useSeleccion(org.slug);
   const marcadas = Object.values(seleccion);
@@ -110,6 +117,7 @@ export function ListaCertificados({ filas }: { filas: FilaLista[] }) {
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <BotonDescargarZip seleccion={marcadas} />
+            {puedeRegenerar && <BotonRegenerarTodos ids={marcadas.map((m) => m.id)} />}
             <button
               type="button"
               onClick={() => setSeleccion({})}
