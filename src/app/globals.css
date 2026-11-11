@@ -61,6 +61,26 @@
    layout de la organización.
    ------------------------------------------------------------------------- */
 
+/* Logo de Genie: el oscuro sobre fondo claro y el blanco en modo oscuro,
+   salvo en los temas que siempre son claros (UA), donde va el oscuro. */
+.logo-oscuro {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  .logo-claro {
+    display: none;
+  }
+  .logo-oscuro {
+    display: block;
+  }
+}
+[data-org="ua"] .logo-claro {
+  display: block;
+}
+[data-org="ua"] .logo-oscuro {
+  display: none;
+}
+
 /* Franja de color bajo el encabezado: solo si el tema la define. */
 .franja {
   display: none;
@@ -84,7 +104,17 @@
   --brand-soft: #e5f0e6;
   --brand-soft-ink: #13512e;
   --gold: #c9962b;
+  --on-gold: #2b1e00;
   --focus: #1f6fbf;
+  /* Estados y sombras también en claro: si no, con el sistema en modo oscuro
+     los avisos y errores salían oscuros sobre la página crema. */
+  --info: #1d5fa8;
+  --warning: #8a5a00;
+  --warning-soft: #fdf7ea;
+  --danger: #b42318;
+  --danger-soft: #fef3f2;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-pop: 0 4px 16px rgba(16, 24, 40, 0.12);
   --franja: linear-gradient(90deg, #d8a93a 0%, #c9962b 62%, #b3332c 62%, #b3332c 81%, #3d93d6 81%);
 }
 
