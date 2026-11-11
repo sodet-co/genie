@@ -25,7 +25,7 @@ export async function regenerar(
   const plantillas = new Map(
     await Promise.all(
       org.evento.plantillas.filter((p) => ids.has(p.id)).map(
-        async (p) => [p.id, await cargarPlantillaEvento(p)] as const,
+        async (p) => [p.id, await cargarPlantillaEvento(p, org.slug)] as const,
       ),
     ),
   );

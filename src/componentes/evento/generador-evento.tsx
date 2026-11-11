@@ -79,7 +79,7 @@ export function GeneradorEvento({
     let vigente = true;
     Promise.all(
       org.evento.plantillas.map(
-        async (p) => [p.tipo, await cargarPlantillaEvento(p)] as const,
+        async (p) => [p.tipo, await cargarPlantillaEvento(p, org.slug)] as const,
       ),
     )
       .then(

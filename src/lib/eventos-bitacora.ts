@@ -12,6 +12,7 @@ export const EVENTOS_BITACORA: Record<string, string> = {
   "admin.lista_zip": "Panel · lista para ZIP",
   "admin.zip": "Panel · ZIP",
   "admin.informe_excel": "Panel · informe Excel",
+  "admin.plantilla": "Panel · cambio de plantilla",
   "admin.error_cliente": "Panel · error en el navegador",
 };
 

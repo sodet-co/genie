@@ -39,16 +39,21 @@ export async function prepararPlantilla(
   };
 }
 
+// La plantilla vigente de la institución: la personalizada desde el panel
+// (Plantillas → Cambiar) o, si no hay, la original del sitio. Sin caché, para
+// que un cambio se use de inmediato al generar.
 export async function cargarPlantillaEvento(
   p: PlantillaEvento,
+  organizacion: string,
 ): Promise<Plantilla> {
+  const url = (archivo: "html" | "fondo") => `/api/${organizacion}/plantillas/${p.id}/${archivo}`;
   const [html, fondo] = await Promise.all([
-    fetch(p.html).then((r) => {
-      if (!r.ok) throw new Error(`No se encontró ${p.html}`);
+    fetch(url("html"), { cache: "no-store" }).then((r) => {
+      if (!r.ok) throw new Error(`No se encontró la plantilla ${p.id} (html)`);
       return r.text();
     }),
-    fetch(p.fondo).then((r) => {
-      if (!r.ok) throw new Error(`No se encontró ${p.fondo}`);
+    fetch(url("fondo"), { cache: "no-store" }).then((r) => {
+      if (!r.ok) throw new Error(`No se encontró la plantilla ${p.id} (fondo)`);
       return r.blob();
     }),
   ]);
