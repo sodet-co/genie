@@ -8,7 +8,7 @@ import { Mensaje } from "@/componentes/generador/mensaje";
 import { normalizarBusqueda } from "@/lib/busqueda";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { BuscadorCertificados } from "@/componentes/admin/buscador-certificados";
-import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
+import { aplicarFiltros, leerFiltros, leerOrden, ORDENES } from "@/lib/servidor/filtros";
 import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/insforge";
 import { puedeRegenerar } from "@/lib/servidor/permisos";
 import { BotonRegenerarTodos } from "@/componentes/admin/regenerar";
@@ -50,6 +50,7 @@ export default async function Certificados({
   if (!org) notFound();
   const parametros = await searchParams;
   const { q, tipo } = leerFiltros(parametros);
+  const { orden, dir } = leerOrden(parametros);
   const pagina = Math.max(1, Number(parametros.pagina) || 1);
   const regenera = puedeRegenerar((await usuarioAdmin(org.slug))?.email);
 
@@ -60,6 +61,8 @@ export default async function Certificados({
       { count: "exact" },
     )
     .eq("organizacion", org.slug)
+    .order(ORDENES[orden], { ascending: dir === "asc" })
+    // Desempate estable: mismo orden en todas las páginas.
     .order("nombre")
     .order("id")
     .range((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA - 1);
@@ -67,7 +70,7 @@ export default async function Certificados({
   const filas = (data ?? []) as Fila[];
   const total = count ?? 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
-  const paginacion = { q, tipo, pagina, paginas, total, mostrados: filas.length };
+  const paginacion = { q, tipo, orden, dir, pagina, paginas, total, mostrados: filas.length };
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,7 +82,7 @@ export default async function Certificados({
             pública.
           </p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-row">
           {total > 0 && (
             <a
               href={`/api/${org.slug}/admin/certificados/excel?${new URLSearchParams({ q, tipo })}`}
@@ -96,7 +99,7 @@ export default async function Certificados({
         </div>
       </div>
 
-      <BuscadorCertificados q={q} tipo={tipo} />
+      <BuscadorCertificados q={q} tipo={tipo} orden={orden} dir={dir} />
 
       {error && (
         <Mensaje tipo="error">
@@ -114,6 +117,7 @@ export default async function Certificados({
         <>
           <Paginacion {...paginacion} />
           <ListaCertificados
+            orden={{ q, tipo, orden, dir }}
             puedeRegenerar={regenera}
             filas={filas.map((f) => ({
               id: f.id,
@@ -154,6 +158,8 @@ export default async function Certificados({
 function Paginacion({
   q,
   tipo,
+  orden,
+  dir,
   pagina,
   paginas,
   total,
@@ -161,6 +167,8 @@ function Paginacion({
 }: {
   q: string;
   tipo: string;
+  orden: string;
+  dir: string;
   pagina: number;
   paginas: number;
   total: number;
@@ -179,7 +187,7 @@ function Paginacion({
       {paginas > 1 && (
         <span className="flex items-center gap-4">
           {pagina > 1 ? (
-            <Link className="enlace" href={{ query: { q, tipo, pagina: pagina - 1 } }}>
+            <Link className="enlace" href={{ query: { q, tipo, orden, dir, pagina: pagina - 1 } }}>
               Anterior
             </Link>
           ) : (
@@ -189,7 +197,7 @@ function Paginacion({
             Página {pagina} de {paginas}
           </span>
           {pagina < paginas ? (
-            <Link className="enlace" href={{ query: { q, tipo, pagina: pagina + 1 } }}>
+            <Link className="enlace" href={{ query: { q, tipo, orden, dir, pagina: pagina + 1 } }}>
               Siguiente
             </Link>
           ) : (

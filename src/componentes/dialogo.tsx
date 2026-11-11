@@ -38,7 +38,12 @@ export function Dialogo({
         e.preventDefault();
         if (!bloquearCierre) onCerrar();
       }}
-      className={`m-0 h-dvh max-h-none w-full max-w-none flex-col overflow-hidden bg-surface-raised p-0 text-ink open:flex backdrop:bg-black/50 sm:m-auto sm:h-auto sm:max-h-[92vh] sm:w-[calc(100%-2rem)] sm:rounded-lg sm:border sm:border-border sm:shadow-pop ${ancho}`}
+      // h-fit, no h-auto: un <dialog> modal está anclado arriba y abajo
+      // (inset: 0), y con altura "auto" se estira a toda la pantalla aunque
+      // tenga poco contenido. En celular sale como hoja desde abajo, del alto
+      // de su contenido; en pantallas grandes, centrado. Si no cabe, el cuerpo
+      // tiene su propio scroll.
+      className={`m-0 mt-auto h-fit max-h-[92dvh] w-full max-w-none flex-col overflow-hidden rounded-t-xl bg-surface-raised p-0 text-ink open:flex backdrop:bg-black/50 sm:m-auto sm:max-h-[90vh] sm:w-[calc(100%-2rem)] sm:rounded-lg sm:border sm:border-border sm:shadow-pop ${ancho}`}
     >
       <header className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
         <div className="min-w-0">

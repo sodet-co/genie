@@ -11,6 +11,25 @@ export function leerFiltros(parametros: Record<string, string | string[] | undef
   return { q, tipo };
 }
 
+// Orden del listado (?orden=&dir=): por nombre, tipo, descargas o fecha.
+export const ORDENES = {
+  nombre: "nombre",
+  tipo: "tipo",
+  descargas: "descargas",
+  generado: "actualizado_en",
+} as const;
+export type Orden = keyof typeof ORDENES;
+export type Direccion = "asc" | "desc";
+
+export function leerOrden(parametros: Record<string, string | string[] | undefined>) {
+  const orden: Orden =
+    typeof parametros.orden === "string" && Object.hasOwn(ORDENES, parametros.orden)
+      ? (parametros.orden as Orden)
+      : "nombre";
+  const dir: Direccion = parametros.dir === "desc" ? "desc" : "asc";
+  return { orden, dir };
+}
+
 type Consulta<Q> = {
   ilike(columna: string, patron: string): Q;
   eq(columna: string, valor: string): Q;

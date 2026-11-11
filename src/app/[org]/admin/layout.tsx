@@ -1,5 +1,5 @@
 import { LogOut } from "lucide-react";
-import Link from "next/link";
+import { NavegacionAdmin } from "@/componentes/admin/navegacion-admin";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { UsuarioActual } from "@/componentes/admin/usuario-actual";
@@ -17,18 +17,8 @@ export default async function LayoutAdmin({ children, params }: LayoutProps<"/[o
   return (
     <>
       <Encabezado seccion={org.nombre} inicio={`${base}/admin`}>
-        <nav className="flex items-center gap-1 text-small sm:gap-3">
-          <Link href={`${base}/admin`} className="enlace px-1.5 py-1 sm:px-2">
-            Certificados
-          </Link>
-          <Link href={`${base}/admin/plantillas`} className="enlace px-1.5 py-1 sm:px-2">
-            Plantillas
-          </Link>
-          <Link href={`${base}/admin/bitacora`} className="enlace px-1.5 py-1 sm:px-2">
-            Bitácora
-          </Link>
-        </nav>
-        <span aria-hidden className="h-5 w-px bg-border" />
+        <NavegacionAdmin base={base} variante="encabezado" />
+        <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />
         <Suspense fallback={<span className="size-7 rounded-full bg-surface-sunken" />}>
           <UsuarioActual organizacion={org.slug} />
         </Suspense>
@@ -44,6 +34,7 @@ export default async function LayoutAdmin({ children, params }: LayoutProps<"/[o
           </button>
         </form>
       </Encabezado>
+      <NavegacionAdmin base={base} variante="pestanas" />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <Suspense fallback={<p className="text-ink-muted">Cargando…</p>}>
           <Guardia organizacion={org.slug}>{children}</Guardia>

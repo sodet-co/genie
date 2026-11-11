@@ -10,7 +10,28 @@ const ESPERA_MS = 300;
 // Búsqueda del listado en tiempo real: al escribir (con una pausa corta) o al
 // cambiar el tipo, actualiza la URL sin recargar la página; el servidor vuelve
 // a traer solo el listado. La URL sigue siendo compartible (?q=&tipo=).
-export function BuscadorCertificados({ q, tipo }: { q: string; tipo: string }) {
+// En celular no hay encabezados de tabla: el orden se elige aquí.
+const ORDENES_CELULAR = [
+  ["nombre:asc", "Nombre (A–Z)"],
+  ["nombre:desc", "Nombre (Z–A)"],
+  ["generado:desc", "Más recientes"],
+  ["generado:asc", "Más antiguos"],
+  ["descargas:desc", "Más descargados"],
+  ["descargas:asc", "Menos descargados"],
+  ["tipo:asc", "Tipo"],
+] as const;
+
+export function BuscadorCertificados({
+  q,
+  tipo,
+  orden = "nombre",
+  dir = "asc",
+}: {
+  q: string;
+  tipo: string;
+  orden?: string;
+  dir?: string;
+}) {
   const router = useRouter();
   const ruta = usePathname();
   const [texto, setTexto] = useState(q);
@@ -23,10 +44,16 @@ export function BuscadorCertificados({ q, tipo }: { q: string; tipo: string }) {
     setTexto(q);
   }, [q]);
 
-  function ir(nuevoTexto: string, nuevoTipo: string) {
+  function ir(nuevoTexto: string, nuevoTipo: string, nuevoOrden = `${orden}:${dir}`) {
     const parametros = new URLSearchParams();
     if (nuevoTexto.trim()) parametros.set("q", nuevoTexto.trim());
     if (nuevoTipo) parametros.set("tipo", nuevoTipo);
+    // El orden se conserva al buscar (y se omite si es el de siempre).
+    const [o, d] = nuevoOrden.split(":");
+    if (`${o}:${d}` !== "nombre:asc") {
+      parametros.set("orden", o);
+      parametros.set("dir", d);
+    }
     const destino = parametros.size ? `${ruta}?${parametros}` : ruta;
     // Siempre a la página 1: con otro filtro la página actual puede no existir.
     iniciar(() => router.replace(destino, { scroll: false }));
@@ -44,7 +71,7 @@ export function BuscadorCertificados({ q, tipo }: { q: string; tipo: string }) {
 
   return (
     <form
-      className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:flex-wrap sm:items-center"
+      className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
       role="search"
       onSubmit={(e) => {
         e.preventDefault();
@@ -88,7 +115,7 @@ export function BuscadorCertificados({ q, tipo }: { q: string; tipo: string }) {
         value={tipo}
         onChange={(e) => ir(texto, e.target.value)}
         aria-label="Tipo"
-        className="campo sm:w-auto"
+        className="campo min-w-0 sm:w-auto"
       >
         <option value="">Todos los tipos</option>
         {TIPOS.map((t) => (
@@ -97,7 +124,19 @@ export function BuscadorCertificados({ q, tipo }: { q: string; tipo: string }) {
           </option>
         ))}
       </select>
-      <span aria-live="polite" className="flex items-center gap-1.5 text-small text-ink-muted">
+      <select
+        value={`${orden}:${dir}`}
+        onChange={(e) => ir(texto, tipo, e.target.value)}
+        aria-label="Ordenar por"
+        className="campo md:hidden"
+      >
+        {ORDENES_CELULAR.map(([valor, etiqueta]) => (
+          <option key={valor} value={valor}>
+            {etiqueta}
+          </option>
+        ))}
+      </select>
+      <span aria-live="polite" className="col-span-2 flex items-center gap-1.5 text-small text-ink-muted empty:hidden sm:col-span-1">
         {cargando && (
           <>
             <LoaderCircle aria-hidden size={14} strokeWidth={1.75} className="animate-spin" />

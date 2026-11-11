@@ -1,6 +1,7 @@
 "use client";
 
-import { Download, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, X } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
 import { BotonDescargarZip, type ItemZip } from "@/componentes/admin/descargar-zip";
@@ -56,11 +57,64 @@ function useSeleccion(org: string) {
   return [seleccion, setSeleccion] as const;
 }
 
+export type OrdenLista = { q: string; tipo: string; orden: string; dir: string };
+
+// Dirección con la que arranca cada columna al ordenarla por primera vez.
+const DIR_INICIAL: Record<string, "asc" | "desc"> = {
+  nombre: "asc",
+  tipo: "asc",
+  descargas: "desc",
+  generado: "desc",
+};
+
+// Encabezado que ordena al hacer clic (otro clic invierte el orden).
+function Encabezado({
+  campo,
+  orden,
+  alinear = "izquierda",
+  className = "",
+  children,
+}: {
+  campo: string;
+  orden: OrdenLista;
+  alinear?: "izquierda" | "derecha";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const activo = orden.orden === campo;
+  const dir = activo ? (orden.dir === "asc" ? "desc" : "asc") : DIR_INICIAL[campo];
+  const parametros = new URLSearchParams();
+  if (orden.q) parametros.set("q", orden.q);
+  if (orden.tipo) parametros.set("tipo", orden.tipo);
+  parametros.set("orden", campo);
+  parametros.set("dir", dir);
+  const Flecha = activo ? (orden.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <th
+      aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
+      className={`px-3 py-2.5 font-medium ${alinear === "derecha" ? "text-right" : ""} ${className}`}
+    >
+      <Link
+        href={`?${parametros}`}
+        scroll={false}
+        replace
+        className={`inline-flex items-center gap-1 rounded-sm hover:text-ink ${activo ? "text-ink" : ""}`}
+        title={`Ordenar por ${String(children).toLowerCase()}`}
+      >
+        {children}
+        <Flecha aria-hidden size={14} strokeWidth={1.75} className={activo ? "" : "opacity-40"} />
+      </Link>
+    </th>
+  );
+}
+
 export function ListaCertificados({
   filas,
+  orden,
   puedeRegenerar = false,
 }: {
   filas: FilaLista[];
+  orden: OrdenLista;
   // Solo la cuenta autorizada ve "Regenerar" en la barra de seleccionados.
   puedeRegenerar?: boolean;
 }) {
@@ -159,7 +213,8 @@ export function ListaCertificados({
                 <p className="text-small text-ink-muted">
                   {f.descargas} descarga(s) · generado {f.generado}
                 </p>
-                <div className="mt-1 flex gap-2">
+                {/* Columnas iguales que siempre caben (2 o 3 botones según la cuenta). */}
+                <div className="mt-1 grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] gap-2 [&>*]:min-w-0 [&>*]:px-2 [&>*]:text-small">
                   <a
                     href={`/api/${org.slug}/admin/certificados/${f.id}`}
                     className="boton-secundario flex-1"
@@ -182,10 +237,10 @@ export function ListaCertificados({
           <thead className="border-b border-border bg-surface-sunken text-label uppercase text-ink-muted">
             <tr>
               <th className="w-10 py-2.5 pl-3 pr-0">{casillaPagina}</th>
-              <th className="px-3 py-2.5 font-medium">Nombre</th>
-              <th className="px-3 py-2.5 font-medium">Tipo</th>
-              <th className="px-3 py-2.5 text-right font-medium">Descargas</th>
-              <th className="hidden px-3 py-2.5 font-medium lg:table-cell">Generado</th>
+              <Encabezado campo="nombre" orden={orden}>Nombre</Encabezado>
+              <Encabezado campo="tipo" orden={orden}>Tipo</Encabezado>
+              <Encabezado campo="descargas" orden={orden} alinear="derecha">Descargas</Encabezado>
+              <Encabezado campo="generado" orden={orden} className="hidden lg:table-cell">Generado</Encabezado>
               <th className="px-3 py-2.5" />
             </tr>
           </thead>
