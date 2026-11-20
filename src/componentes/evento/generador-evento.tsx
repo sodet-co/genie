@@ -230,7 +230,7 @@ function CargaExcel({
       <p className="text-ink-muted">
         Una fila por certificado: <strong>Nombre</strong>,{" "}
         <strong>Tipo</strong> (lista desplegable), <strong>Título</strong>{" "}
-        (solo para ponente, conferencista y coordinador de mesa) y{" "}
+        (para todos menos asistente) y{" "}
         <strong>Correo</strong> (opcional; varios separados por punto y coma).
       </p>
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">

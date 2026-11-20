@@ -47,7 +47,7 @@ export async function GET(_: Request, ctx: RouteContext<"/api/[org]/admin/modelo
     "Una fila por certificado. Si una persona tiene varios (dos ponencias, o coordinadora y ponente), va en varias filas con el mismo nombre.",
     "Nombre: tal como debe salir en el certificado.",
     `Tipo: elígelo de la lista (${etiquetas.join(", ")}).`,
-    "Título: obligatorio para Ponente, Conferencista y Coordinador de mesa (título de la ponencia, conferencia o mesa). Vacío para Asistente.",
+    "Título: obligatorio para todos menos Asistente (título de la ponencia, conferencia, mesa o panel). Vacío para Asistente.",
     "Correo: el correo registrado. La persona lo escribe en la página para descargar sus certificados. Si tiene varios, sepáralos con punto y coma (;): cualquiera de ellos sirve.",
     "Si una persona no tiene correo, deja la celda vacía: en ese caso descarga su certificado escribiendo su nombre completo.",
   ].forEach((texto, i) => {
