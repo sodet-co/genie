@@ -69,6 +69,9 @@ export type FilaCertificado = {
   correos: string[];
   organizacion: string;
   plantilla: string | null;
+  // Versión de la plantilla con que se generó (lib/version-plantilla); null
+  // en los anteriores al 2026-11-23.
+  plantilla_version: string | null;
   datos: Record<string, string>;
   archivo_key: string;
   descargas: number;

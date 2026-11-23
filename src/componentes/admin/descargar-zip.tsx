@@ -18,11 +18,12 @@ class SinSesion extends Error {}
 // marcados ({ seleccion }) o todos los del listado con los filtros aplicados
 // ({ q, tipo, total }).
 export function BotonDescargarZip(
-  props: { seleccion: ItemZip[] } | { q: string; tipo: string; total: number },
+  props: { seleccion: ItemZip[] } | { q: string; tipo: string; estado?: string; total: number },
 ) {
   const seleccion = "seleccion" in props ? props.seleccion : null;
   const q = "q" in props ? props.q : "";
   const tipo = "tipo" in props ? props.tipo : "";
+  const soloEstado = "estado" in props ? (props.estado ?? "") : "";
   const total = seleccion ? seleccion.length : "total" in props ? props.total : 0;
   const org = useOrganizacion();
   const [abierto, setAbierto] = useState(false);
@@ -31,7 +32,7 @@ export function BotonDescargarZip(
   const [hechos, setHechos] = useState(0);
   const [estado, setEstado] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   const cancelado = useRef(false);
-  const filtrado = Boolean(q || tipo);
+  const filtrado = Boolean(q || tipo || soloEstado);
 
   async function iniciar() {
     cancelado.current = false;
@@ -45,6 +46,7 @@ export function BotonDescargarZip(
         certificados = seleccion;
       } else {
         const parametros = new URLSearchParams({ q, tipo });
+        if (soloEstado) parametros.set("estado", soloEstado);
         const respuesta = await fetch(`/api/${org.slug}/admin/certificados/lista?${parametros}`);
         if (respuesta.status === 401) throw new SinSesion();
         if (!respuesta.ok) throw new Error(`error ${respuesta.status}`);

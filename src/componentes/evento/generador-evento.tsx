@@ -612,6 +612,7 @@ function Publicar({
           html: plantilla.html,
           tipo,
           plantilla: plantillaPorTipo(org, tipo)?.id,
+          version: plantilla.version,
           correos: correos.get(normalizarBusqueda(p.nombre)) ?? [],
         };
       });

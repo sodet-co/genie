@@ -1,11 +1,12 @@
 "use client";
 
-import { Download, FileCode, Image as ImagenIcono, LoaderCircle, RotateCcw } from "lucide-react";
+import { Download, FileCode, Image as ImagenIcono, LoaderCircle, Pencil, RotateCcw } from "lucide-react";
 import JSZip from "jszip";
 import { useCallback, useEffect, useState } from "react";
 import { Mensaje } from "@/componentes/generador/mensaje";
 import { VistaPrevia } from "@/componentes/generador/vista-previa";
 import { useOrganizacion } from "@/componentes/organizacion";
+import { EditorHtml } from "./editor-html";
 import { DATOS_EJEMPLO, type PlantillaEvento } from "@/lib/organizaciones";
 import { descargar } from "@/lib/pdf";
 import { medidasPagina } from "@/lib/plantilla";
@@ -110,6 +111,7 @@ function TarjetaPlantilla({
   const org = useOrganizacion();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
+  const [editando, setEditando] = useState(false);
 
   async function exportar() {
     setOcupado("exportar");
@@ -211,6 +213,10 @@ function TarjetaPlantilla({
 
       {puedeReemplazar && (
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setEditando(true)} disabled={ocupado !== null} className="boton-primario">
+            <Pencil aria-hidden size={16} strokeWidth={1.75} />
+            Editar HTML
+          </button>
           <button type="button" onClick={exportar} disabled={ocupado !== null} className="boton-secundario">
             {icono("exportar", Download)}
             Descargar
@@ -258,6 +264,17 @@ function TarjetaPlantilla({
         </div>
       )}
       {mensaje && <Mensaje tipo={mensaje.tipo}>{mensaje.texto}</Mensaje>}
+      {puedeReemplazar && (
+        <EditorHtml
+          plantilla={p}
+          abierto={editando}
+          onCerrar={() => setEditando(false)}
+          onGuardado={() => {
+            setMensaje({ tipo: "ok", texto: "Listo: HTML guardado. Revisa la vista previa." });
+            onCambio();
+          }}
+        />
+      )}
     </section>
   );
 }

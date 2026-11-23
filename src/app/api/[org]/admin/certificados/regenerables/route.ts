@@ -2,6 +2,8 @@ import { buscarOrganizacion } from "@/lib/organizaciones";
 import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
 import { todasLasFilas } from "@/lib/servidor/paginar";
 import { puedeRegenerar } from "@/lib/servidor/permisos";
+import { soloDesactualizados } from "@/lib/servidor/filtros";
+import { versionesPlantillas } from "@/lib/servidor/plantillas";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAXIMO_IDS = 2000;
@@ -23,8 +25,9 @@ async function acceso(ctx: Contexto) {
 }
 
 // Certificados que se pueden regenerar (hechos con una plantilla del evento),
-// leídos por páginas. Con `ids`, solo esos.
-async function leer(organizacion: string, ids?: string[]) {
+// leídos por páginas. Con `ids`, solo esos; con `versiones`, solo los
+// hechos con una versión anterior de su plantilla.
+async function leer(organizacion: string, ids?: string[], versiones?: Record<string, string>) {
   return todasLasFilas((desde, hasta) => {
     let consulta = clienteAdmin()
       .database.from(TABLA)
@@ -32,16 +35,22 @@ async function leer(organizacion: string, ids?: string[]) {
       .eq("organizacion", organizacion)
       .not("plantilla", "is", null);
     if (ids) consulta = consulta.in("id", ids);
+    if (versiones) consulta = soloDesactualizados(consulta, versiones);
     return consulta.order("nombre").order("id").range(desde, hasta);
   });
 }
 
-// Todos.
-export async function GET(_: Request, ctx: Contexto) {
+// Todos, o con ?estado=desactualizados solo los que no están al día.
+export async function GET(request: Request, ctx: Contexto) {
   const { org, respuesta } = await acceso(ctx);
   if (!org) return respuesta;
   try {
-    return Response.json({ certificados: await leer(org.slug) });
+    const url = new URL(request.url);
+    const versiones =
+      url.searchParams.get("estado") === "desactualizados"
+        ? await versionesPlantillas(org, url.origin)
+        : undefined;
+    return Response.json({ certificados: await leer(org.slug, undefined, versiones) });
   } catch (e) {
     console.error(e);
     return Response.json({ error: "No se pudo leer la base de datos." }, { status: 500 });

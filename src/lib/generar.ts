@@ -123,6 +123,8 @@ export type ItemPublicacion = {
   // Id de la plantilla del evento (permite regenerar después); sin él, el
   // certificado queda como de "otro evento".
   plantilla?: string;
+  // Versión de esa plantilla (para saber después si quedó desactualizado).
+  version?: string;
   // Al regenerar se usan la clave y el nombre guardados, no los del registro.
   clave?: string;
   nombre?: string;
@@ -153,7 +155,7 @@ export async function publicarLote(
   try {
     for (let i = 0; i < items.length; i++) {
       if (opciones.estaCancelado()) throw new Cancelado();
-      const { registro, html, tipo, fila, plantilla, clave, nombre, correos } = items[i];
+      const { registro, html, tipo, fila, plantilla, version, clave, nombre, correos } = items[i];
       try {
         const pdf = await generarPdf(
           renderizador,
@@ -177,6 +179,7 @@ export async function publicarLote(
         );
         formulario.set("tipo", tipo);
         if (plantilla) formulario.set("plantilla", plantilla);
+        if (plantilla && version) formulario.set("version", version);
         if (correos?.length) formulario.set("correos", correos.join(";"));
         formulario.set("datos", JSON.stringify(registro));
 

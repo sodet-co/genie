@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Download, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Download, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BotonEliminar } from "@/componentes/admin/boton-eliminar";
@@ -21,6 +21,8 @@ export type FilaLista = {
   descargas: number;
   ultimaDescarga: string;
   generado: string;
+  // Hecho con una versión anterior de su plantilla.
+  desactualizado: boolean;
   // Solo para quien puede regenerar (ver lib/servidor/permisos).
   regenerable: CertificadoRegenerable | null;
 };
@@ -57,7 +59,7 @@ function useSeleccion(org: string) {
   return [seleccion, setSeleccion] as const;
 }
 
-export type OrdenLista = { q: string; tipo: string; orden: string; dir: string };
+export type OrdenLista = { q: string; tipo: string; estado: string; orden: string; dir: string };
 
 // Dirección con la que arranca cada columna al ordenarla por primera vez.
 const DIR_INICIAL: Record<string, "asc" | "desc"> = {
@@ -86,6 +88,7 @@ function Encabezado({
   const parametros = new URLSearchParams();
   if (orden.q) parametros.set("q", orden.q);
   if (orden.tipo) parametros.set("tipo", orden.tipo);
+  if (orden.estado) parametros.set("estado", orden.estado);
   parametros.set("orden", campo);
   parametros.set("dir", dir);
   const Flecha = activo ? (orden.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
@@ -213,6 +216,7 @@ export function ListaCertificados({
                 <p className="text-small text-ink-muted">
                   {f.descargas} descarga(s) · generado {f.generado}
                 </p>
+                {f.desactualizado && <MarcaDesactualizado />}
                 {/* Columnas iguales que siempre caben (2 o 3 botones según la cuenta). */}
                 <div className="mt-1 grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] gap-2 [&>*]:min-w-0 [&>*]:px-2 [&>*]:text-small">
                   <a
@@ -271,7 +275,14 @@ export function ListaCertificados({
                     {f.detalle}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5">{etiquetaTipo(f.tipo)}</td>
+                <td className="whitespace-nowrap px-3 py-2.5">
+                  {etiquetaTipo(f.tipo)}
+                  {f.desactualizado && (
+                    <span className="mt-1 block">
+                      <MarcaDesactualizado />
+                    </span>
+                  )}
+                </td>
                 <td
                   className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums"
                   title={f.ultimaDescarga ? `Última descarga: ${f.ultimaDescarga}` : "Aún no se ha descargado"}
@@ -301,6 +312,19 @@ export function ListaCertificados({
         </table>
       </div>
     </div>
+  );
+}
+
+// Certificado hecho con una versión anterior de su plantilla.
+function MarcaDesactualizado() {
+  return (
+    <span
+      className="inline-flex w-fit items-center gap-1 rounded-sm bg-warning-soft px-2 py-0.5 text-small text-ink"
+      title="Su plantilla cambió después de generarlo. Regenéralo para actualizarlo."
+    >
+      <AlertTriangle aria-hidden size={14} strokeWidth={1.75} className="text-warning" />
+      Desactualizado
+    </span>
   );
 }
 

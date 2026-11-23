@@ -24,11 +24,13 @@ const ORDENES_CELULAR = [
 export function BuscadorCertificados({
   q,
   tipo,
+  estado = "",
   orden = "nombre",
   dir = "asc",
 }: {
   q: string;
   tipo: string;
+  estado?: string;
   orden?: string;
   dir?: string;
 }) {
@@ -44,10 +46,11 @@ export function BuscadorCertificados({
     setTexto(q);
   }, [q]);
 
-  function ir(nuevoTexto: string, nuevoTipo: string, nuevoOrden = `${orden}:${dir}`) {
+  function ir(nuevoTexto: string, nuevoTipo: string, nuevoOrden = `${orden}:${dir}`, nuevoEstado = estado) {
     const parametros = new URLSearchParams();
     if (nuevoTexto.trim()) parametros.set("q", nuevoTexto.trim());
     if (nuevoTipo) parametros.set("tipo", nuevoTipo);
+    if (nuevoEstado) parametros.set("estado", nuevoEstado);
     // El orden se conserva al buscar (y se omite si es el de siempre).
     const [o, d] = nuevoOrden.split(":");
     if (`${o}:${d}` !== "nombre:asc") {
@@ -123,6 +126,16 @@ export function BuscadorCertificados({
             {t.etiqueta}
           </option>
         ))}
+      </select>
+      <select
+        name="estado"
+        value={estado}
+        onChange={(e) => ir(texto, tipo, `${orden}:${dir}`, e.target.value)}
+        aria-label="Versión de la plantilla"
+        className="campo min-w-0 sm:w-auto"
+      >
+        <option value="">Todas las versiones</option>
+        <option value="desactualizados">Desactualizados</option>
       </select>
       <select
         value={`${orden}:${dir}`}

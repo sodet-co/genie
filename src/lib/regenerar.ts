@@ -40,6 +40,7 @@ export async function regenerar(
       html: plantilla.html,
       tipo: c.tipo,
       plantilla: c.plantilla!,
+      version: plantilla.version,
       clave: c.clave_original,
       nombre: c.nombre,
       correos: c.correos ?? [],

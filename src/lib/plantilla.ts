@@ -166,7 +166,21 @@ export async function incrustarCssExterno(html: string) {
   return { html: resultado, fallidos };
 }
 
-async function descargarCss(url: string) {
+// Cada hoja externa (con sus fuentes) se descarga una sola vez por sesión: el
+// editor rearma la vista previa con cada cambio y regenerar usa la misma.
+const cssDescargado = new Map<string, Promise<string>>();
+
+function descargarCss(url: string) {
+  let css = cssDescargado.get(url);
+  if (!css) {
+    css = descargarCssSinCache(url);
+    cssDescargado.set(url, css);
+    css.catch(() => cssDescargado.delete(url));
+  }
+  return css;
+}
+
+async function descargarCssSinCache(url: string) {
   const respuesta = await fetch(url);
   if (!respuesta.ok) throw new Error(`${respuesta.status} al descargar ${url}`);
   let css = await respuesta.text();

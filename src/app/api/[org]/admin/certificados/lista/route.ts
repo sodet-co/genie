@@ -1,6 +1,7 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
+import { versionesPlantillas } from "@/lib/servidor/plantillas";
 import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
 import { todasLasFilas } from "@/lib/servidor/paginar";
 
@@ -19,6 +20,7 @@ export async function GET(
   if (!usuario) return b.json(401, { error: "No autorizado" }, { resultado: "rechazado" });
   b.quien(usuario.email, "panel");
   const filtros = leerFiltros(Object.fromEntries(new URL(request.url).searchParams));
+  const versiones = filtros.estado ? await versionesPlantillas(org, new URL(request.url).origin) : undefined;
   try {
     const certificados = await todasLasFilas((desde, hasta) =>
       aplicarFiltros(
@@ -31,6 +33,7 @@ export async function GET(
           .order("id")
           .range(desde, hasta),
         filtros,
+        versiones,
       ),
     );
     return b.json(

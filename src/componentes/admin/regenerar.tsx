@@ -101,9 +101,11 @@ export function BotonRegenerar({
 }
 
 // Regenera en lote los certificados hechos con plantillas del evento: todos,
-// o solo los seleccionados en el listado ({ ids }).
-export function BotonRegenerarTodos({ ids }: { ids?: string[] } = {}) {
+// los seleccionados en el listado ({ ids }) o solo los desactualizados
+// ({ desactualizados: cantidad }).
+export function BotonRegenerarTodos({ ids, desactualizados }: { ids?: string[]; desactualizados?: number } = {}) {
   const seleccion = ids !== undefined;
+  const soloDesactualizados = !seleccion && desactualizados !== undefined;
   const router = useRouter();
   const org = useOrganizacion();
   const [abierto, setAbierto] = useState(false);
@@ -128,7 +130,7 @@ export function BotonRegenerarTodos({ ids }: { ids?: string[] } = {}) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ids }),
           })
-        : await fetch(url);
+        : await fetch(soloDesactualizados ? `${url}?estado=desactualizados` : url);
       if (respuesta.status === 401) throw new SesionVencida();
       if (!respuesta.ok) throw new Error(`error ${respuesta.status}`);
       const { certificados } = (await respuesta.json()) as {
@@ -164,10 +166,14 @@ export function BotonRegenerarTodos({ ids }: { ids?: string[] } = {}) {
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="boton-secundario w-full sm:w-auto"
+        className={`${soloDesactualizados ? "boton-primario" : "boton-secundario"} w-full sm:w-auto`}
       >
         <RefreshCw aria-hidden size={16} strokeWidth={1.75} />
-        {seleccion ? `Regenerar ${ids.length}` : "Regenerar todos"}
+        {seleccion
+          ? `Regenerar ${ids.length}`
+          : soloDesactualizados
+            ? `Regenerar ${desactualizados} desactualizado(s)`
+            : "Regenerar todos"}
       </button>
       <Dialogo
         abierto={abierto}
@@ -176,7 +182,13 @@ export function BotonRegenerarTodos({ ids }: { ids?: string[] } = {}) {
           router.refresh();
         }}
         bloquearCierre={ocupado}
-        titulo={seleccion ? `Regenerar ${ids.length} certificado(s) seleccionado(s)` : "Regenerar todos los certificados"}
+        titulo={
+          seleccion
+            ? `Regenerar ${ids.length} certificado(s) seleccionado(s)`
+            : soloDesactualizados
+              ? `Regenerar ${desactualizados} certificado(s) desactualizado(s)`
+              : "Regenerar todos los certificados"
+        }
         descripcion="Con la plantilla actual y los datos guardados de cada persona."
         ancho="sm:max-w-xl"
       >

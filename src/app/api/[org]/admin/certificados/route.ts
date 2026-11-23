@@ -8,6 +8,7 @@ import {
 } from "@/lib/busqueda";
 import { buscarOrganizacion, plantillaPorId } from "@/lib/organizaciones";
 import { esTipo } from "@/lib/tipos";
+import { FORMATO_VERSION } from "@/lib/version-plantilla";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
 import {
   BUCKET,
@@ -41,6 +42,7 @@ export async function POST(
   const idPlantilla = formulario.get("plantilla");
   // Solo se guardan plantillas del evento conocidas (las que se pueden regenerar).
   const plantilla = plantillaPorId(org, String(idPlantilla ?? ""))?.id ?? null;
+  const version = String(formulario.get("version") ?? "");
   const contexto = { nombre, tipo: String(tipo ?? ""), plantilla, correos_enviados: String(formulario.get("correos") ?? "") };
 
   if (!(archivo instanceof Blob)) return b.json(400, { error: "Falta el PDF." }, { detalle: contexto });
@@ -117,6 +119,8 @@ export async function POST(
     referencia,
     correos,
     plantilla,
+    // Con qué versión de la plantilla se hizo (solo plantillas del evento).
+    plantilla_version: plantilla && FORMATO_VERSION.test(version) ? version : null,
     datos,
     archivo_key: archivoKey,
     busqueda: textoBusqueda({ nombre, clave: claveOriginal, titulo: String(datos.titulo ?? ""), correos }),

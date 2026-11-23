@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
+import { versionesPlantillas } from "@/lib/servidor/plantillas";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
 import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/insforge";
 import { todasLasFilas } from "@/lib/servidor/paginar";
@@ -38,6 +39,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/[org]/admin/
   }
   b.quien(usuario.email, "panel");
   const filtros = leerFiltros(Object.fromEntries(new URL(request.url).searchParams));
+  const versiones = filtros.estado ? await versionesPlantillas(org, new URL(request.url).origin) : undefined;
 
   let filas: Fila[];
   try {
@@ -52,6 +54,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/[org]/admin/
           .order("id")
           .range(desde, hasta),
         filtros,
+        versiones,
       ),
     );
   } catch (e) {

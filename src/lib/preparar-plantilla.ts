@@ -5,6 +5,7 @@ import {
   leerComoDataUrl,
 } from "./plantilla";
 import type { PlantillaEvento } from "./organizaciones";
+import { versionPlantilla } from "./version-plantilla";
 
 export type Plantilla = {
   nombreArchivo: string;
@@ -14,6 +15,8 @@ export type Plantilla = {
   faltantes: string[];
   // Hojas de estilo externas (ej. Google Fonts) que no se pudieron descargar.
   externosFallidos: string[];
+  // Solo en las plantillas del evento (ver version-plantilla).
+  version?: string;
 };
 
 // Deja la plantilla autocontenida: imágenes, fuentes y CSS externo embebidos,
@@ -47,17 +50,20 @@ export async function cargarPlantillaEvento(
   organizacion: string,
 ): Promise<Plantilla> {
   const url = (archivo: "html" | "fondo") => `/api/${organizacion}/plantillas/${p.id}/${archivo}`;
-  const [html, fondo] = await Promise.all([
+  const [bytesHtml, fondo] = await Promise.all([
     fetch(url("html"), { cache: "no-store" }).then((r) => {
       if (!r.ok) throw new Error(`No se encontró la plantilla ${p.id} (html)`);
-      return r.text();
+      return r.arrayBuffer();
     }),
     fetch(url("fondo"), { cache: "no-store" }).then((r) => {
       if (!r.ok) throw new Error(`No se encontró la plantilla ${p.id} (fondo)`);
       return r.blob();
     }),
   ]);
-  return prepararPlantilla(html, `${p.id}.html`, [
+  // La versión sale de los bytes tal como llegaron (igual que en el servidor).
+  const version = await versionPlantilla(bytesHtml, await fondo.arrayBuffer());
+  const plantilla = await prepararPlantilla(new TextDecoder().decode(bytesHtml), `${p.id}.html`, [
     { nombre: `${p.id}.png`, datos: fondo },
   ]);
+  return { ...plantilla, version };
 }
