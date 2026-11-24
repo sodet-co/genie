@@ -2,7 +2,7 @@ import { buscarOrganizacion } from "@/lib/organizaciones";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
 import { versionesPlantillas } from "@/lib/servidor/plantillas";
-import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
+import { clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/supabase";
 import { todasLasFilas } from "@/lib/servidor/paginar";
 
 // Certificados para la descarga masiva del panel, con los mismos filtros del
@@ -25,7 +25,7 @@ export async function GET(
     const certificados = await todasLasFilas((desde, hasta) =>
       aplicarFiltros(
         clienteAdmin()
-          .database.from(TABLA)
+          .from(TABLA)
           .select("id, nombre, tipo")
           .eq("organizacion", org.slug)
           .order("tipo")

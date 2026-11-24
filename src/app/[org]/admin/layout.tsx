@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { UsuarioActual } from "@/componentes/admin/usuario-actual";
 import { Encabezado } from "@/componentes/encabezado";
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { usuarioAdmin } from "@/lib/servidor/insforge";
+import { usuarioAdmin } from "@/lib/servidor/supabase";
 import { cerrarSesion } from "../ingresar/acciones";
 
 export const metadata = { title: "Panel · Certificados" };

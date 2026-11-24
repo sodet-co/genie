@@ -10,7 +10,7 @@ import { normalizarBusqueda } from "@/lib/busqueda";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { BuscadorCertificados } from "@/componentes/admin/buscador-certificados";
 import { aplicarFiltros, leerFiltros, leerOrden, ORDENES, condicionDesactualizados } from "@/lib/servidor/filtros";
-import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/insforge";
+import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/supabase";
 import { puedeRegenerar } from "@/lib/servidor/permisos";
 import { versionesPlantillas } from "@/lib/servidor/plantillas";
 import { BotonRegenerarTodos } from "@/componentes/admin/regenerar";
@@ -68,7 +68,7 @@ export default async function Certificados({
   const desactualizados = versiones
     ? ((
         await clienteAdmin()
-          .database.from(TABLA)
+          .from(TABLA)
           .select("id", { count: "exact" })
           .eq("organizacion", org.slug)
           .not("plantilla", "is", null)
@@ -78,7 +78,7 @@ export default async function Certificados({
     : 0;
 
   const consulta = clienteAdmin()
-    .database.from(TABLA)
+    .from(TABLA)
     .select(
       "id, clave_original, nombre, tipo, plantilla, plantilla_version, datos, correos, descargas, ultima_descarga, actualizado_en",
       { count: "exact" },

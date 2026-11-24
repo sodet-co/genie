@@ -10,7 +10,7 @@ import {
   leerFiltrosBitacora,
   type FilaBitacora,
 } from "@/lib/servidor/filtros-bitacora";
-import { clienteAdmin } from "@/lib/servidor/insforge";
+import { clienteAdmin } from "@/lib/servidor/supabase";
 
 export const metadata = { title: "Bitácora · Certificados" };
 
@@ -42,7 +42,7 @@ export default async function Bitacora({ params, searchParams }: PageProps<"/[or
   const pagina = Math.max(1, Number(parametros.pagina) || 1);
 
   const consulta = clienteAdmin()
-    .database.from("bitacora")
+    .from("bitacora")
     .select(COLUMNAS_BITACORA, { count: "exact" })
     .eq("organizacion", org.slug)
     .order("creado_en", { ascending: false })

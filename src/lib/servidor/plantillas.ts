@@ -1,6 +1,6 @@
 import type { Organizacion, PlantillaEvento } from "@/lib/organizaciones";
 import { versionPlantilla } from "@/lib/version-plantilla";
-import { BUCKET, clienteAdmin } from "./insforge";
+import { BUCKET, clienteAdmin } from "./supabase";
 
 // Plantillas reemplazables desde el panel, sin tocar código: si en el storage
 // hay una versión personalizada (subida en Plantillas), se usa esa; si no, la
@@ -35,42 +35,42 @@ export async function leerOriginal(base: string, p: PlantillaEvento, archivo: Ar
   return respuesta.blob();
 }
 
+// Sube (o reemplaza) un archivo del storage con su tipo.
+async function subir(ruta: string, datos: Blob) {
+  const { error } = await clienteAdmin()
+    .storage.from(BUCKET)
+    .upload(ruta, datos, { upsert: true, contentType: datos.type || "application/octet-stream" });
+  if (error) throw error;
+}
+
 // Guarda una versión nueva; la anterior (si había) pasa al historial.
 export async function guardarPersonalizada(org: string, id: string, archivo: ArchivoPlantilla, datos: Blob) {
-  const storage = clienteAdmin().storage.from(BUCKET);
-  const ruta = rutaPersonalizada(org, id, archivo);
   const anterior = await leerPersonalizada(org, id, archivo);
-  if (anterior) {
-    const { error } = await storage.upload(rutaHistorial(org, id, archivo), anterior);
-    if (error) throw error;
-  }
-  const { error } = await storage.upload(ruta, datos);
-  if (error) throw error;
+  if (anterior) await subir(rutaHistorial(org, id, archivo), anterior);
+  await subir(rutaPersonalizada(org, id, archivo), datos);
 }
 
 // Vuelve a la original: quita la personalizada (queda copia en el historial).
 export async function quitarPersonalizada(org: string, id: string, archivo: ArchivoPlantilla) {
-  const storage = clienteAdmin().storage.from(BUCKET);
   const anterior = await leerPersonalizada(org, id, archivo);
   if (!anterior) return false;
-  const { error: e1 } = await storage.upload(rutaHistorial(org, id, archivo), anterior);
-  if (e1) throw e1;
-  const { error } = await storage.remove(rutaPersonalizada(org, id, archivo));
+  await subir(rutaHistorial(org, id, archivo), anterior);
+  const { error } = await clienteAdmin().storage.from(BUCKET).remove([rutaPersonalizada(org, id, archivo)]);
   if (error) throw error;
   return true;
 }
 
 // Qué plantillas tienen versión personalizada, y desde cuándo.
 export async function estadoPlantillas(org: Organizacion) {
+  // Solo el nivel de la carpeta (la subcarpeta historial/ sale como entrada
+  // sin id y se ignora).
   const { data, error } = await clienteAdmin()
     .storage.from(BUCKET)
-    .list({ prefix: `${raiz(org.slug)}/`, limit: 200 });
+    .list(raiz(org.slug), { limit: 1000 });
   if (error) throw error;
-  // Los tipos del SDK dicen `objects`, pero la API responde la lista en `data`:
-  // se aceptan los dos.
-  type Objeto = { key: string; uploadedAt: string };
-  const respuesta = data as unknown as { objects?: Objeto[]; data?: Objeto[] } | null;
-  const objetos = (respuesta?.objects ?? respuesta?.data ?? []).filter((o) => !o.key.includes("/historial/"));
+  const objetos = (data ?? [])
+    .filter((o) => o.id)
+    .map((o) => ({ key: `${raiz(org.slug)}/${o.name}`, uploadedAt: o.updated_at ?? o.created_at }));
   return Object.fromEntries(
     org.evento.plantillas.map((p) => {
       const de = (archivo: ArchivoPlantilla) =>

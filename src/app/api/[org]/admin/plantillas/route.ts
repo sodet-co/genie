@@ -1,5 +1,5 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
-import { usuarioAdmin } from "@/lib/servidor/insforge";
+import { usuarioAdmin } from "@/lib/servidor/supabase";
 import { puedeRegenerar } from "@/lib/servidor/permisos";
 import { estadoPlantillas } from "@/lib/servidor/plantillas";
 

@@ -1,6 +1,6 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { registrar, type Resultado } from "@/lib/servidor/bitacora";
-import { usuarioAdmin } from "@/lib/servidor/insforge";
+import { usuarioAdmin } from "@/lib/servidor/supabase";
 import { ipDe, permitir } from "@/lib/servidor/limite";
 
 // Eventos que pasan en el navegador (el ZIP se arma allá; los errores de red
@@ -30,7 +30,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/[org]/bitac
   if (evento.startsWith("admin.")) {
     const usuario = await usuarioAdmin(org.slug);
     if (!usuario) return new Response(null, { status: 401 });
-    actor = usuario.email;
+    actor = usuario.email ?? null;
   }
 
   registrar(

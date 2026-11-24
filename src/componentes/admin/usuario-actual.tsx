@@ -1,10 +1,13 @@
-import { usuarioAdmin } from "@/lib/servidor/insforge";
+import { usuarioAdmin } from "@/lib/servidor/supabase";
 
-// Nombre del perfil de InsForge (o el correo si no tiene) con su inicial.
+// Nombre del usuario en Supabase (Authentication → Users → Display name, o
+// user_metadata.name) o, si no tiene, el correo; con su inicial.
 export async function UsuarioActual({ organizacion }: { organizacion: string }) {
   const usuario = await usuarioAdmin(organizacion);
   if (!usuario) return null;
-  const nombre = usuario.profile?.name?.trim() || usuario.email;
+  const meta = usuario.user_metadata ?? {};
+  const nombre =
+    String(meta.display_name ?? meta.full_name ?? meta.name ?? "").trim() || usuario.email || "Administrador";
   return (
     <span className="flex min-w-0 items-center gap-2" title={usuario.email}>
       <span

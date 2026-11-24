@@ -7,7 +7,7 @@ import {
   leerFiltrosBitacora,
   type FilaBitacora,
 } from "@/lib/servidor/filtros-bitacora";
-import { clienteAdmin, usuarioAdmin } from "@/lib/servidor/insforge";
+import { clienteAdmin, usuarioAdmin } from "@/lib/servidor/supabase";
 import { todasLasFilas } from "@/lib/servidor/paginar";
 import { respuestaArchivo } from "@/lib/servidor/respuesta-pdf";
 
@@ -29,7 +29,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/[org]/admin/
     filas = await todasLasFilas<FilaBitacora>((desde, hasta) =>
       aplicarFiltrosBitacora(
         clienteAdmin()
-          .database.from("bitacora")
+          .from("bitacora")
           .select(COLUMNAS_BITACORA)
           .eq("organizacion", org.slug)
           .order("creado_en", { ascending: false })

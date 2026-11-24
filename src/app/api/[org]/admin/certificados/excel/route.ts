@@ -3,7 +3,7 @@ import { buscarOrganizacion } from "@/lib/organizaciones";
 import { aplicarFiltros, leerFiltros } from "@/lib/servidor/filtros";
 import { versionesPlantillas } from "@/lib/servidor/plantillas";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
-import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/insforge";
+import { clienteAdmin, TABLA, usuarioAdmin, type FilaCertificado } from "@/lib/servidor/supabase";
 import { todasLasFilas } from "@/lib/servidor/paginar";
 import { respuestaArchivo } from "@/lib/servidor/respuesta-pdf";
 import { etiquetaTipo } from "@/lib/tipos";
@@ -46,7 +46,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/[org]/admin/
     filas = await todasLasFilas<Fila>((desde, hasta) =>
       aplicarFiltros(
         clienteAdmin()
-          .database.from(TABLA)
+          .from(TABLA)
           .select("id, nombre, tipo, datos, correos, descargas, ultima_descarga, creado_en, actualizado_en")
           .eq("organizacion", org.slug)
           .order("nombre")

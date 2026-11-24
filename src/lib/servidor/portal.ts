@@ -6,7 +6,7 @@ import {
 } from "@/lib/busqueda";
 import type { Organizacion } from "@/lib/organizaciones";
 import { etiquetaTipo } from "@/lib/tipos";
-import { clienteAdmin, TABLA } from "./insforge";
+import { clienteAdmin, TABLA } from "./supabase";
 
 // Cómo se identifica la persona en el portal: con uno de sus correos
 // registrados o, si no registró ninguno, con su nombre completo.
@@ -50,7 +50,7 @@ export type CertificadoPortal = {
 // descarga escribiéndolo.
 export async function buscarCertificados(org: Organizacion, busqueda: Busqueda) {
   let consulta = clienteAdmin()
-    .database.from(TABLA)
+    .from(TABLA)
     .select("id, nombre, tipo, datos, archivo_key, descargas")
     .eq("organizacion", org.slug);
   consulta =
@@ -82,7 +82,7 @@ export async function contarDescargas(certificados: CertificadoPortal[]) {
   const ahora = new Date().toISOString();
   await Promise.all(
     certificados.map(async (c) => {
-      const { error } = await db.database
+      const { error } = await db
         .from(TABLA)
         .update({ descargas: c.descargas + 1, ultima_descarga: ahora })
         .eq("id", c.id);

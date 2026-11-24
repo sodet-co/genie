@@ -1,4 +1,4 @@
-import { clienteAdmin } from "@/lib/servidor/insforge";
+import { clienteAdmin } from "@/lib/servidor/supabase";
 import { ipDe, permitir } from "@/lib/servidor/limite";
 
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   if (!CORREO.test(fila.correo)) return error(400, "Escribe un correo válido.");
 
   const { error: errorGuardado } = await clienteAdmin()
-    .database.from("solicitudes")
+    .from("solicitudes")
     .insert([fila]);
   if (errorGuardado) {
     console.error(errorGuardado);

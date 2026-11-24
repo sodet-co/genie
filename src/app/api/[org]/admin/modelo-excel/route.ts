@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import { usuarioAdmin } from "@/lib/servidor/insforge";
+import { usuarioAdmin } from "@/lib/servidor/supabase";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { etiquetaTipo } from "@/lib/tipos";
 

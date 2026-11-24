@@ -15,7 +15,7 @@ import {
   clienteAdmin,
   TABLA,
   usuarioAdmin,
-} from "@/lib/servidor/insforge";
+} from "@/lib/servidor/supabase";
 
 const TAMANO_MAXIMO = 15 * 1024 * 1024;
 
@@ -82,7 +82,7 @@ export async function POST(
   const detalle = { ...contexto, datos, correos, referencia, bytes: bytes.length };
 
   const db = clienteAdmin();
-  const { data: existente, error: errorConsulta } = await db.database
+  const { data: existente, error: errorConsulta } = await db
     .from(TABLA)
     .select("id, archivo_key")
     .eq("organizacion", org.slug)
@@ -101,7 +101,11 @@ export async function POST(
     existente?.archivo_key ?? `${org.slug}/${crypto.randomUUID()}.pdf`;
   const { error: errorSubida } = await db.storage
     .from(BUCKET)
-    .upload(archivoKey, new Blob([bytes], { type: "application/pdf" }));
+    // upsert: al regenerar se reemplaza el PDF en la misma ruta.
+    .upload(archivoKey, new Blob([bytes], { type: "application/pdf" }), {
+      upsert: true,
+      contentType: "application/pdf",
+    });
   if (errorSubida) {
     console.error(errorSubida);
     return b.json(500, { error: "No se pudo guardar el PDF." }, {
@@ -126,16 +130,16 @@ export async function POST(
     busqueda: textoBusqueda({ nombre, clave: claveOriginal, titulo: String(datos.titulo ?? ""), correos }),
   };
   const { data: guardado, error: errorGuardado } = existente
-    ? await db.database
+    ? await db
         .from(TABLA)
         .update({ ...fila, actualizado_en: new Date().toISOString() })
         .eq("id", existente.id)
         .select("id")
         .maybeSingle()
-    : await db.database.from(TABLA).insert([fila]).select("id").maybeSingle();
+    : await db.from(TABLA).insert([fila]).select("id").maybeSingle();
   if (errorGuardado) {
     console.error(errorGuardado);
-    if (!existente) await db.storage.from(BUCKET).remove(archivoKey);
+    if (!existente) await db.storage.from(BUCKET).remove([archivoKey]);
     return b.json(500, { error: "No se pudo registrar el certificado." }, {
       certificadoId: existente?.id ?? null,
       detalle: { ...detalle, archivo_key: archivoKey, error: describirError(errorGuardado) },

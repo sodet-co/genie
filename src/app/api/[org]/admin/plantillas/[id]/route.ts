@@ -1,7 +1,7 @@
 import { buscarOrganizacion, plantillaPorId } from "@/lib/organizaciones";
 import { extraerMarcadores } from "@/lib/plantilla";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
-import { usuarioAdmin } from "@/lib/servidor/insforge";
+import { usuarioAdmin } from "@/lib/servidor/supabase";
 import { puedeRegenerar } from "@/lib/servidor/permisos";
 import { guardarPersonalizada, quitarPersonalizada, type ArchivoPlantilla } from "@/lib/servidor/plantillas";
 

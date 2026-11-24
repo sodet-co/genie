@@ -1,6 +1,6 @@
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
-import { BUCKET, clienteAdmin } from "@/lib/servidor/insforge";
+import { BUCKET, clienteAdmin } from "@/lib/servidor/supabase";
 import { ipDe, permitir } from "@/lib/servidor/limite";
 import {
   buscarCertificados,

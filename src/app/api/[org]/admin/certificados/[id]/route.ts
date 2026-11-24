@@ -2,7 +2,7 @@ import { respuestaPdf } from "@/lib/servidor/respuesta-pdf";
 import { etiquetaTipo } from "@/lib/tipos";
 import { buscarOrganizacion } from "@/lib/organizaciones";
 import { bitacoraDe, describirError } from "@/lib/servidor/bitacora";
-import { BUCKET, clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/insforge";
+import { BUCKET, clienteAdmin, TABLA, usuarioAdmin } from "@/lib/servidor/supabase";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -12,7 +12,7 @@ type Fila = { id: string; nombre: string; tipo: string; archivo_key: string; dat
 async function buscar(organizacion: string, id: string) {
   if (!UUID.test(id)) return null;
   const { data, error } = await clienteAdmin()
-    .database.from(TABLA)
+    .from(TABLA)
     .select("id, nombre, tipo, archivo_key, datos, correos")
     .eq("id", id)
     .eq("organizacion", organizacion)
@@ -82,7 +82,7 @@ export async function DELETE(request: Request, ctx: Contexto) {
   const respaldo = { nombre: fila.nombre, tipo: fila.tipo, datos: fila.datos, correos: fila.correos, archivo_key: fila.archivo_key };
 
   const db = clienteAdmin();
-  const { error } = await db.database.from(TABLA).delete().eq("id", fila.id);
+  const { error } = await db.from(TABLA).delete().eq("id", fila.id);
   if (error) {
     console.error(error);
     return b.json(500, { error: "No se pudo eliminar." }, {
@@ -90,7 +90,7 @@ export async function DELETE(request: Request, ctx: Contexto) {
       detalle: { ...respaldo, error: describirError(error) },
     });
   }
-  const { error: errorArchivo } = await db.storage.from(BUCKET).remove(fila.archivo_key);
+  const { error: errorArchivo } = await db.storage.from(BUCKET).remove([fila.archivo_key]);
   if (errorArchivo) console.error(errorArchivo);
   return b.json(200, { ok: true }, {
     mensaje: `Eliminó el certificado de ${fila.nombre}`,

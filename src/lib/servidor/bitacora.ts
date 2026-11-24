@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { clienteAdmin } from "./insforge";
+import { clienteAdmin } from "./supabase";
 import { ipDeCabeceras } from "./limite";
 
 export type Resultado = "ok" | "no_encontrado" | "rechazado" | "limite" | "error";
@@ -63,7 +63,7 @@ export function registrar(
     detalle: detalleSeguro(e.detalle),
   };
   const escribir = async () => {
-    const { error } = await clienteAdmin().database.from("bitacora").insert([fila]);
+    const { error } = await clienteAdmin().from("bitacora").insert([fila]);
     if (error) console.error("[bitacora] no se pudo registrar", fila.evento, error);
   };
   try {
